@@ -1,5 +1,6 @@
 import asyncio
 import time
+from functools import partial
 from agents.base import BaseAgent
 from tools.call_tools import initiate_outbound_call
 from tools.storage_tools import create_call_record
@@ -51,7 +52,11 @@ class PreScreenerAgent(BaseAgent):
                 continue
 
             try:
-                result = initiate_outbound_call(phone, name, session_id)
+                # Run sync Twilio call in thread pool so it doesn't block the event loop
+                loop = asyncio.get_event_loop()
+                result = await loop.run_in_executor(
+                    None, partial(initiate_outbound_call, phone, name, session_id)
+                )
                 call_sid = result["call_sid"]
                 call_sids.append(call_sid)
                 await create_call_record(session_id, candidate_id, call_sid, phone)
@@ -62,6 +67,13 @@ class PreScreenerAgent(BaseAgent):
                     candidate_id=candidate_id,
                     phone=phone,
                     error=str(exc),
+                    exc_info=True,
+                )
+                # Record the failure so we don't poll forever waiting for it
+                await db.create_call_record(session_id, candidate_id, f"failed_{candidate_id}", phone)
+                await db.update_call_record(
+                    f"failed_{candidate_id}",
+                    {"status": "failed", "screening_data": {"error": str(exc)}},
                 )
 
         # ── Step 2: Poll until all calls complete or timeout ───────────────

@@ -1,3 +1,4 @@
+from urllib.parse import quote
 from twilio.rest import Client as TwilioClient
 from config.settings import get_settings
 from core.logging import get_logger
@@ -33,9 +34,11 @@ def initiate_outbound_call(to_phone: str, candidate_name: str, session_id: str) 
     Returns {call_sid, status}.
     """
     client = get_twilio_client()
+    # Normalize to E.164: strip spaces, dashes, parens (Twilio requires +918951523420 not +91 8951523420)
+    to_phone = "".join(c for c in to_phone if c.isdigit() or c == "+")
     webhook_url = (
         f"{_settings.public_base_url}/api/webhooks/twilio/voice"
-        f"?session_id={session_id}&candidate_name={candidate_name}"
+        f"?session_id={quote(session_id)}&candidate_name={quote(candidate_name)}"
     )
     status_callback = f"{_settings.public_base_url}/api/webhooks/twilio/call-status"
 
