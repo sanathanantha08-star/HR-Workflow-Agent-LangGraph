@@ -84,28 +84,43 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
 
 ## Demo Screenshots
 
-The screenshots below follow a real end-to-end run in sequence — from uploading the resume to the final workflow completion.
+The screenshots below follow a real end-to-end run in sequence — from uploading files to workflow completion, including the clickable step-history drawers and the HTML run log.
 
-**1. Workflow started — resume and JD uploaded, agents processing**
-![Step 1](1.png)
+**1. Upload screen — clean landing page, drop zones for JD and resumes**
+![Upload screen empty](1.png)
 
-**2. Resume Shortlister Agent output — candidate ranked and scored**
-![Step 2](2.png)
+**2. Files selected — JD and 3 candidate resumes ready to launch**
+![Files selected and ready](2.png)
 
-**3. HITL Gate 1 — recruiter reviews and approves the shortlist**
-![Step 3](3.png)
+**3. Resume Parser agent active — pipeline nodes light up, parsing in progress**
+![Resume Parser agent working](4.png)
 
-**4. Pre-Screening Call Agent triggered — Twilio outbound call initiated**
-![Step 4](4.png)
+**4. HITL Gate 1 — shortlisted candidates with match scores, awaiting recruiter approval**
+![Shortlist review](3.png)
 
-**5. Live call in progress — AI voice agent conducting the conversation**
-![Step 5](5.png)
+**5. Pre-Screening Calls — AI voice agent calling candidates sequentially (1 of 2 done)**
+![Pre-screening calls in progress](5.png)
 
-**6. HITL Gate 2 — recruiter reviews pre-screening results and approves**
-![Step 6](6.png)
+**6. HITL Gate 2 — pre-screening results collected, recruiter reviews before completing**
+![Pre-screening results review](6.png)
 
-**7. Workflow complete — HTML run log with full transcript and terminal logs**
-![Step 7](7.png)
+**7. Workflow Complete — all pipeline nodes green, run log ready to open**
+![Workflow complete](7.png)
+
+**8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timeline**
+![Run log overview tab](8.png)
+
+**9. HTML Run Log — Call Transcript tab showing the full AI-conducted conversation**
+![Run log call transcript](9.png)
+
+**10. Step history drawer — clicking a done node shows Resume Analysis data inline**
+![Resume analysis drawer](10.png)
+
+**11. Step history drawer — Shortlist Approval decision and AI rationale**
+![Shortlist approval drawer](11.png)
+
+**12. Step history drawer — Pre-Screening Calls results for all candidates**
+![Pre-screening calls drawer](12.png)
 
 ---
 

@@ -31,59 +31,24 @@ class PreScreenerAgent(BaseAgent):
             candidate_count=len(shortlisted_candidates),
         )
 
+        # ── Step 1: Call each candidate sequentially: initiate → wait → next ─
         call_sids: list[str] = []
-
-        # ── Step 1: Initiate calls to all candidates ───────────────────────
         for candidate in shortlisted_candidates:
-            phone = candidate.get("phone", "").strip()
-            candidate_id = candidate.get("candidate_id", "")
-            name = candidate.get("name", "Candidate")
+            sid = await self._initiate_call(session_id, candidate)
+            if sid:
+                call_sids.append(sid)
+            # Block until this call finishes before dialling the next one
+            await self._wait_for_one_call(session_id, candidate["candidate_id"])
 
-            if not phone:
-                logger.warning("no_phone_for_candidate", candidate_id=candidate_id, name=name)
-                # Create a failed call record so we can track it
-                await db.create_call_record(
-                    session_id, candidate_id, f"no_phone_{candidate_id}", phone or "N/A"
-                )
-                await db.update_call_record(
-                    f"no_phone_{candidate_id}",
-                    {"status": "failed", "screening_data": {"error": "No phone number available"}},
-                )
-                continue
-
-            try:
-                # Run sync Twilio call in thread pool so it doesn't block the event loop
-                loop = asyncio.get_event_loop()
-                result = await loop.run_in_executor(
-                    None, partial(initiate_outbound_call, phone, name, session_id)
-                )
-                call_sid = result["call_sid"]
-                call_sids.append(call_sid)
-                await create_call_record(session_id, candidate_id, call_sid, phone)
-                logger.info("call_initiated_for_candidate", candidate_id=candidate_id, call_sid=call_sid)
-            except Exception as exc:
-                logger.error(
-                    "call_initiation_failed",
-                    candidate_id=candidate_id,
-                    phone=phone,
-                    error=str(exc),
-                    exc_info=True,
-                )
-                # Record the failure so we don't poll forever waiting for it
-                await db.create_call_record(session_id, candidate_id, f"failed_{candidate_id}", phone)
-                await db.update_call_record(
-                    f"failed_{candidate_id}",
-                    {"status": "failed", "screening_data": {"error": str(exc)}},
-                )
-
-        # ── Step 2: Poll until all calls complete or timeout ───────────────
-        pre_screening_results = await self._wait_for_calls(session_id, shortlisted_candidates)
+        # ── Step 2: Build final results from completed call records ───────
+        call_docs = await db.get_session_calls(session_id)
+        pre_screening_results = self._build_results(shortlisted_candidates, call_docs)
 
         logger.info(
             "pre_screener_complete",
             session_id=session_id,
             results_count=len(pre_screening_results),
-            call_sids=call_sids,
+            calls_initiated=len(call_sids),
         )
         return {
             "call_sids": call_sids,
@@ -92,38 +57,59 @@ class PreScreenerAgent(BaseAgent):
             "tokens_out": 0,
         }
 
-    async def _wait_for_calls(
-        self, session_id: str, candidates: list[dict]
-    ) -> list[dict]:
-        """Poll MongoDB until all candidate calls have a terminal status."""
+    async def _initiate_call(self, session_id: str, candidate: dict) -> str | None:
+        """Initiate a single Twilio call and create its DB record. Returns call_sid or None."""
+        phone        = candidate.get("phone", "").strip()
+        candidate_id = candidate.get("candidate_id", "")
+        name         = candidate.get("name", "Candidate")
+
+        if not phone:
+            logger.warning("no_phone_for_candidate", session_id=session_id, candidate_id=candidate_id, name=name)
+            await db.create_call_record(session_id, candidate_id, f"no_phone_{candidate_id}", "N/A")
+            await db.update_call_record(f"no_phone_{candidate_id}", {"status": "failed", "screening_data": {"error": "No phone number"}})
+            return None
+
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None, partial(initiate_outbound_call, phone, name, session_id)
+            )
+            call_sid = result["call_sid"]
+            await create_call_record(session_id, candidate_id, call_sid, phone)
+            logger.info("call_initiated", session_id=session_id, candidate_id=candidate_id, call_sid=call_sid)
+            return call_sid
+        except Exception as exc:
+            logger.error("call_initiation_failed", session_id=session_id, candidate_id=candidate_id, error=str(exc))
+            await db.create_call_record(session_id, candidate_id, f"failed_{candidate_id}", phone)
+            await db.update_call_record(f"failed_{candidate_id}", {"status": "failed", "screening_data": {"error": str(exc)}})
+            return None
+
+    async def _wait_for_one_call(self, session_id: str, candidate_id: str) -> None:
+        """Block until the given candidate's call reaches a terminal status or times out."""
+        terminal = {"completed", "failed", "no_answer", "no-answer", "busy", "canceled"}
         deadline = time.time() + _settings.call_max_wait_minutes * 60
         interval = _settings.call_polling_interval_seconds
-        expected_count = len(candidates)
 
         while time.time() < deadline:
             call_docs = await db.get_session_calls(session_id)
-            completed = [
-                d for d in call_docs
-                if d.get("status") in ("completed", "failed", "no_answer", "busy", "no-answer")
-            ]
-            logger.info(
-                "polling_calls",
-                session_id=session_id,
-                completed=len(completed),
-                expected=expected_count,
-            )
-            if len(completed) >= expected_count:
-                return self._build_results(candidates, call_docs)
+            for doc in call_docs:
+                if doc.get("candidate_id") == candidate_id and doc.get("status") in terminal:
+                    logger.info(
+                        "call_finished",
+                        session_id=session_id,
+                        candidate_id=candidate_id,
+                        status=doc["status"],
+                    )
+                    return
+            logger.info("waiting_for_call", session_id=session_id, candidate_id=candidate_id)
             await asyncio.sleep(interval)
 
         logger.warning(
-            "call_wait_timeout",
+            "single_call_timeout",
             session_id=session_id,
+            candidate_id=candidate_id,
             timeout_minutes=_settings.call_max_wait_minutes,
         )
-        # Return whatever we have even on timeout
-        call_docs = await db.get_session_calls(session_id)
-        return self._build_results(candidates, call_docs)
 
     def _build_results(self, candidates: list[dict], call_docs: list[dict]) -> list[dict]:
         """Merge candidate data with call screening results."""
@@ -145,6 +131,7 @@ class PreScreenerAgent(BaseAgent):
                 "current_ctc": screening.get("current_ctc"),
                 "expected_ctc": screening.get("expected_ctc"),
                 "availability": screening.get("availability"),
+                "experience_years": screening.get("experience_years"),
             })
         return results
 

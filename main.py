@@ -1,7 +1,9 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from core.logging import setup_logging, get_logger
 from core.exceptions import register_exception_handlers
 from db.mongodb import connect as db_connect, disconnect as db_disconnect
@@ -45,6 +47,13 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 register_exception_handlers(app)
 app.include_router(api_router)
+
+# Serve frontend SPA
+_frontend = Path(__file__).parent / "frontend"
+
+@app.get("/", response_class=FileResponse)
+async def serve_frontend():
+    return FileResponse(_frontend / "index.html")
 
 
 @app.get("/health")

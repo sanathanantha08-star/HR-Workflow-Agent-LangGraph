@@ -42,14 +42,13 @@ async def reject_shortlist(session_id: str, feedback: str) -> None:
 
 async def approve_pre_screening(session_id: str, feedback: str | None = None) -> None:
     """Resume the graph with pre-screening approved."""
-    await _resume_with_decision(
-        session_id=session_id,
-        state_update={
-            "pre_screening_approval_status": "approved",
-            "pre_screening_approval_feedback": feedback,
-        },
-        gate_name="pre_screening",
-    )
+    state_update = {
+        "pre_screening_approval_status": "approved",
+        "pre_screening_approval_feedback": feedback,
+    }
+    # If the pre_screening node died mid-run (results still empty), synthesize from calls
+    state_update = await _maybe_recover_pre_screening(session_id, state_update)
+    await _resume_with_decision(session_id=session_id, state_update=state_update, gate_name="pre_screening")
 
 
 async def reject_pre_screening(session_id: str, feedback: str) -> None:
@@ -62,6 +61,62 @@ async def reject_pre_screening(session_id: str, feedback: str) -> None:
         },
         gate_name="pre_screening",
     )
+
+
+async def _maybe_recover_pre_screening(session_id: str, state_update: dict) -> dict:
+    """
+    If the pre_screening node died before writing results, synthesize them from
+    the calls collection and advance the LangGraph cursor past that node so the
+    graph can proceed to hitl_pre_screening normally.
+    """
+    session = await db.get_session(session_id)
+    if not session:
+        return state_update
+    snap = session.get("state_snapshot", {})
+    if snap.get("pre_screening_results"):
+        return state_update  # results already present, nothing to recover
+
+    calls = await db.get_session_calls(session_id)
+    candidates = snap.get("shortlisted_candidates", [])
+    if not calls or not candidates:
+        return state_update
+
+    calls_by_cid = {c["candidate_id"]: c for c in calls}
+    results = []
+    for cand in candidates:
+        cid = cand["candidate_id"]
+        call_doc = calls_by_cid.get(cid, {})
+        sd = call_doc.get("screening_data", {})
+        results.append({
+            "candidate_id": cid,
+            "name": cand.get("name", ""),
+            "phone": cand.get("phone", ""),
+            "email": cand.get("email", ""),
+            "call_sid": call_doc.get("call_sid", ""),
+            "call_status": call_doc.get("status", "not_initiated"),
+            "looking_for_change": sd.get("looking_for_change"),
+            "reason_for_change": sd.get("reason_for_change"),
+            "current_ctc": sd.get("current_ctc"),
+            "expected_ctc": sd.get("expected_ctc"),
+            "availability": sd.get("availability"),
+            "experience_years": sd.get("experience_years"),
+        })
+
+    logger.info("pre_screening_recovery", session_id=session_id, recovered=len(results))
+
+    # Advance graph cursor: pretend pre_screening node just completed
+    thread_id = session["thread_id"]
+    config = make_config(thread_id)
+    graph = get_graph()
+    graph.update_state(
+        config,
+        {"pre_screening_results": results, "current_step": "pre_screening_complete"},
+        as_node="pre_screening",
+    )
+    await db.update_session(session_id, {"pre_screening_results": results, "current_step": "pre_screening_complete"})
+
+    state_update["pre_screening_results"] = results
+    return state_update
 
 
 async def _resume_with_decision(

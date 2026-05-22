@@ -1,7 +1,7 @@
 import uuid
 import asyncio
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from typing import Annotated
 from models.schemas import StartWorkflowResponse, WorkflowStatusResponse
 from models.state import initial_state
@@ -140,3 +140,15 @@ async def get_pre_screening_results(session_id: str):
         "results": snap.get("pre_screening_results", []),
         "call_details": calls,
     }
+
+
+@router.get("/{session_id}/report", response_class=HTMLResponse)
+async def get_workflow_report(session_id: str):
+    """Generate and return the full HTML run log report for this session."""
+    session = await db.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    from generate_report import build_report
+    html = await build_report(session_id)
+    return HTMLResponse(content=html)

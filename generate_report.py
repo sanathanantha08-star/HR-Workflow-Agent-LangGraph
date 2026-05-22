@@ -388,6 +388,12 @@ async def build_report(session_id: str) -> str:
         terminal_html=terminal_html,
     )
 
+    return html
+
+
+async def save_report(session_id: str) -> str:
+    """Build the report and write it to disk. Returns the filename."""
+    html = await build_report(session_id)
     out = f"run_log_{session_id[:8]}.html"
     with open(out, "w") as f:
         f.write(html)
@@ -399,4 +405,4 @@ if __name__ == "__main__":
     if not SESSION_ID:
         print("Usage: python generate_report.py <session_id>")
         sys.exit(1)
-    asyncio.run(build_report(SESSION_ID))
+    asyncio.run(save_report(SESSION_ID))
