@@ -1,7 +1,6 @@
 ## 🎥 Demo Video
 
-[Watch Full Demo Video](https://drive.google.com/file/d/1-VWvtRLQaE0Ic6-zwmVFBYLLPHOKgNwj/view?usp=sharing)
-
+<a href="https://drive.google.com/file/d/1-VWvtRLQaE0Ic6-zwmVFBYLLPHOKgNwj/view?usp=drive_link" target="_blank">Watch Full Demo Video</a>
 
 # Agentic HR — AI-Powered Recruitment Pipeline
 
