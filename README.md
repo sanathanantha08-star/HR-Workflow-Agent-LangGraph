@@ -82,6 +82,33 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
 
 ---
 
+## Demo Screenshots
+
+The screenshots below follow a real end-to-end run in sequence — from uploading the resume to the final workflow completion.
+
+**1. Workflow started — resume and JD uploaded, agents processing**
+![Step 1](1.png)
+
+**2. Resume Shortlister Agent output — candidate ranked and scored**
+![Step 2](2.png)
+
+**3. HITL Gate 1 — recruiter reviews and approves the shortlist**
+![Step 3](3.png)
+
+**4. Pre-Screening Call Agent triggered — Twilio outbound call initiated**
+![Step 4](4.png)
+
+**5. Live call in progress — AI voice agent conducting the conversation**
+![Step 5](5.png)
+
+**6. HITL Gate 2 — recruiter reviews pre-screening results and approves**
+![Step 6](6.png)
+
+**7. Workflow complete — HTML run log with full transcript and terminal logs**
+![Step 7](7.png)
+
+---
+
 ## What's Built and Working Today
 
 ### ✅ Resume Shortlister Agent
