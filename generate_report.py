@@ -227,7 +227,6 @@ async def build_report(session_id: str) -> str:
             kv("Email", c.get("email", "—")) +
             kv("Phone", c.get("phone", "—")) +
             kv("Role", c.get("current_role", "—")) +
-            kv("Experience", f'{c.get("experience_years", 0)} yrs') +
             kv("Match Score", f'<span class="score">{score}</span><span style="color:#64748b">/10</span>') +
             kv("Reason", f'<em style="color:#94a3b8">{c.get("selection_reason","")}</em>')
         )
@@ -247,6 +246,7 @@ async def build_report(session_id: str) -> str:
             kv("Current CTC", r.get("current_ctc") or "—") +
             kv("Expected CTC", r.get("expected_ctc") or "—") +
             kv("Availability", r.get("availability") or "—") +
+            kv("Experience", f'{r.get("experience_years") or "—"} yrs' if r.get("experience_years") else "—") +
             kv("Call Status", badge(r.get("call_status", "—"), "green" if r.get("call_status") == "completed" else "gray"))
         )
 

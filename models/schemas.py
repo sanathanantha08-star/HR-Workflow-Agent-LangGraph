@@ -23,7 +23,6 @@ class ParsedResume(BaseModel):
     email: str = ""
     phone: str = ""
     skills: list[str] = Field(default_factory=list)
-    experience_years: float = 0.0
     current_role: str = ""
     education: str = ""
     raw_text: str = ""
@@ -36,7 +35,6 @@ class ShortlistedCandidate(BaseModel):
     email: str
     phone: str
     skills: list[str]
-    experience_years: float
     current_role: str
     selection_reason: str
     match_score: float = Field(ge=0.0, le=10.0)
@@ -82,6 +80,7 @@ class PreScreeningData(BaseModel):
     current_ctc: Optional[str] = None
     expected_ctc: Optional[str] = None
     availability: Optional[str] = None
+    experience_years: Optional[str] = None
     call_sid: str = ""
     call_status: str = "initiated"   # initiated | completed | failed | no_answer
 

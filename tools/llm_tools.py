@@ -103,9 +103,9 @@ def llm_parse_resume(resume_text: str) -> dict:
     system = (
         "You are an expert HR resume parser. Extract structured information from the resume text. "
         "Return ONLY valid JSON with these exact keys: "
-        "name, email, phone, skills (array of strings), experience_years (float), "
+        "name, email, phone, skills (array of strings), "
         "current_role, education, summary. "
-        "If a field is missing, use empty string or 0. Do not add any explanation."
+        "If a field is missing, use empty string. Do not add any explanation."
     )
     user = f"Parse this resume:\n\n{resume_text[:4000]}"
     result = llm_extract_json(system, user)
@@ -157,14 +157,16 @@ def llm_generate_call_response(
         f"You are an AI HR recruiter calling {candidate_name} on behalf of {company_name} "
         "for a job pre-screening. Your goal is to naturally gather: "
         "(1) Are they open to a job change, (2) Reason for change, "
-        "(3) Current CTC, (4) Expected CTC, (5) Availability for interview. "
+        "(3) Current CTC, (4) Expected CTC, (5) Availability for interview, "
+        "(6) Total years of professional experience. "
         "Be professional, warm, and concise. Keep responses under 3 sentences. "
         "Return ONLY valid JSON: "
         '{"reply": <str>, "is_complete": <bool>, '
         '"screening_data": {"looking_for_change": <bool|null>, '
         '"reason_for_change": <str|null>, "current_ctc": <str|null>, '
-        '"expected_ctc": <str|null>, "availability": <str|null>}}. '
-        "Set is_complete to true only when all 5 fields are collected or candidate declines."
+        '"expected_ctc": <str|null>, "availability": <str|null>, '
+        '"experience_years": <str|null>}}. '
+        "Set is_complete to true only when all 6 fields are collected or candidate declines."
     )
     user = (
         f"Conversation so far:\n{history_text}\n\n"

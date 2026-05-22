@@ -83,7 +83,6 @@ class ResumeShortlisterAgent(BaseAgent):
                 "email": resume.get("email", ""),
                 "phone": resume.get("phone", ""),
                 "skills": resume.get("skills", []),
-                "experience_years": resume.get("experience_years", 0.0),
                 "current_role": resume.get("current_role", ""),
                 "education": resume.get("education", ""),
                 "selection_reason": entry.get("selection_reason", ""),
