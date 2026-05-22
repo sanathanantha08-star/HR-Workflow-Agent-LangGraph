@@ -41,7 +41,7 @@ try:
     call = client.calls.create(
         to=to_number,
         from_=from_number,
-        url=f"{public_url}/api/webhooks/twilio/voice?session_id=test&candidate_name=Sanath",
+        url=f"{public_url}/api/webhooks/twilio/ping",
         status_callback=f"{public_url}/api/webhooks/twilio/call-status",
         status_callback_method="POST",
     )

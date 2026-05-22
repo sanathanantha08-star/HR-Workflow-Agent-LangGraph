@@ -17,6 +17,17 @@ router = APIRouter(prefix="/webhooks/twilio", tags=["Twilio Webhooks"])
 TWIML_CONTENT_TYPE = "application/xml"
 
 
+@router.post("/ping")
+@router.get("/ping")
+async def twilio_ping(request: Request):
+    """Dead-simple endpoint — use this URL in test_call.py to confirm Twilio can reach us."""
+    logger.info("twilio_ping_received", method=request.method)
+    return Response(
+        content='<?xml version="1.0"?><Response><Say>Hello! The webhook is working.</Say></Response>',
+        media_type=TWIML_CONTENT_TYPE,
+    )
+
+
 @router.post("/voice")
 async def twilio_voice(
     request: Request,

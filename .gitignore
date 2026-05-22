@@ -39,3 +39,7 @@ static/audio/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Generated HTML run logs
+run_log_*.html
+*.html
