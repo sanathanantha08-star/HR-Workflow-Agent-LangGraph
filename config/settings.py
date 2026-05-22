@@ -1,0 +1,43 @@
+from pydantic_settings import BaseSettings
+from pydantic import Field
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    # Cohere
+    cohere_api_key: str = Field(..., env="COHERE_API_KEY")
+    cohere_model: str = Field("command-r-plus-08-2024", env="COHERE_MODEL")
+
+    # MongoDB
+    mongodb_uri: str = Field("mongodb://localhost:27017", env="MONGODB_URI")
+    mongodb_db_name: str = Field("hr_workflow", env="MONGODB_DB_NAME")
+
+    # Twilio
+    twilio_account_sid: str = Field("", env="TWILIO_ACCOUNT_SID")
+    twilio_auth_token: str = Field("", env="TWILIO_AUTH_TOKEN")
+    twilio_from_number: str = Field("", env="TWILIO_FROM_NUMBER")
+
+    # Public base URL for Twilio webhooks
+    public_base_url: str = Field("http://localhost:8000", env="PUBLIC_BASE_URL")
+
+    # App
+    app_host: str = Field("0.0.0.0", env="APP_HOST")
+    app_port: int = Field(8000, env="APP_PORT")
+    log_level: str = Field("INFO", env="LOG_LEVEL")
+    env: str = Field("development", env="ENV")
+
+    # Tuning
+    max_shortlisted_candidates: int = 5
+    call_polling_interval_seconds: int = 10
+    call_max_wait_minutes: int = 30
+    tool_max_retries: int = 3
+    tool_retry_wait_seconds: float = 2.0
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()

@@ -1,0 +1,31 @@
+Job Title: Senior Software Engineer
+
+Company: TechCorp Pvt Ltd
+Location: Bangalore, India (Hybrid)
+
+About the Role:
+We are looking for a Senior Software Engineer to join our growing engineering team. You will design, build, and maintain scalable backend systems and APIs used by millions of users.
+
+Responsibilities:
+- Design and develop robust, scalable backend services and REST APIs
+- Work with cloud infrastructure (AWS/GCP/Azure) and containerized deployments
+- Collaborate with product and frontend teams on system design
+- Participate in code reviews and mentor junior engineers
+- Drive technical decisions and architecture discussions
+
+Required Skills:
+- 3+ years of software engineering experience
+- Strong proficiency in Python, Java, or Go
+- Experience with REST API design and microservices
+- Familiarity with databases: PostgreSQL, MongoDB, or Redis
+- Experience with Docker and Kubernetes
+- Good understanding of distributed systems
+
+Nice to Have:
+- Experience with machine learning or AI integrations
+- Exposure to LangChain, LLM APIs, or agentic systems
+- Prior startup experience
+
+Compensation:
+- Competitive CTC based on experience
+- ESOPs + performance bonus
