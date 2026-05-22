@@ -10,7 +10,7 @@ Flow for each gate:
 import asyncio
 from graph.workflow import get_graph, make_config
 from db import mongodb as db
-from core.logging import get_logger
+from core.logging import get_logger, bind_session_log
 from core.exceptions import SessionNotFoundError, HITLError
 
 logger = get_logger("hitl.gates")
@@ -94,6 +94,7 @@ async def _resume_with_decision(
 
 async def _run_graph(graph, config: dict, session_id: str) -> None:
     """Resume graph execution and persist the updated state snapshot."""
+    bind_session_log(session_id)   # re-attach file sink for this resumed task
     try:
         logger.info("graph_resuming", session_id=session_id)
         async for event in graph.astream(None, config, stream_mode="values"):

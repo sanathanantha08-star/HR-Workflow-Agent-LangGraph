@@ -8,7 +8,7 @@ from models.state import initial_state
 from graph.workflow import get_graph, make_config
 from db import mongodb as db
 from tools.storage_tools import store_file_bytes
-from core.logging import get_logger
+from core.logging import get_logger, bind_session_log
 from core.exceptions import SessionNotFoundError
 
 logger = get_logger("api.workflow")
@@ -74,6 +74,7 @@ async def start_workflow(
 
 async def _run_initial_graph(state: dict, session_id: str, thread_id: str) -> None:
     """Run graph from START until first interrupt (before hitl_shortlist)."""
+    bind_session_log(session_id)   # opens logs/<session_id>.jsonl, tags all logs in this task
     config = make_config(thread_id)
     graph = get_graph()
     try:

@@ -8,6 +8,9 @@ import asyncio
 from datetime import datetime
 from db.mongodb import connect, get_db
 
+import os
+from pathlib import Path
+
 SESSION_ID = sys.argv[1] if len(sys.argv) > 1 else None
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -274,7 +277,6 @@ async def build_report(session_id: str) -> str:
     # ── Terminal Logs tab ─────────────────────────────────────────────────
     agent_metrics = snap.get("agent_metrics", [])
     tool_metrics  = snap.get("tool_metrics", [])
-    history       = snap.get("workflow_history", [])
 
     # Metric summary cards
     total_tokens_in  = sum(m.get("tokens_in", 0)  for m in agent_metrics + tool_metrics)
@@ -296,131 +298,82 @@ async def build_report(session_id: str) -> str:
         f'<div class="m-val">{total_latency/1000:.1f}s</div><div class="m-sub">agent processing time</div></div>'
     )
 
-    # Build terminal log lines from all available structured data
-    log_events = []
-
-    # Session start synthetic entry
-    created_at = session.get("created_at") or session.get("_id").generation_time.isoformat() if session.get("_id") else ""
-    log_events.append({
-        "ts": str(created_at)[:19],
-        "level": "info",
-        "event": "workflow_started",
-        "fields": {"session_id": session_id[:8] + "...", "thread_id": snap.get("thread_id", "")[:8] + "..."},
-    })
-
-    log_events.append({
-        "ts": str(created_at)[:19],
-        "level": "info",
-        "event": "mongodb_connected",
-        "fields": {"db": "hr_workflow"},
-    })
-
-    # Workflow history → info log lines
-    for h in history:
-        log_events.append({
-            "ts": h.get("timestamp", "")[:19],
-            "level": "info",
-            "event": f'node_completed  step={h.get("step", "")}',
-            "fields": {},
-        })
-        log_events.append({
-            "ts": h.get("timestamp", "")[:19],
-            "level": "info",
-            "event": h.get("summary", ""),
-            "fields": {k: str(v) for k, v in h.items()
-                       if k not in ("step", "timestamp", "summary")},
-        })
-
-    # Agent metrics → structured log lines
-    for m in agent_metrics:
-        log_events.append({
-            "ts": m.get("timestamp", "")[:19],
-            "level": "info",
-            "event": f'agent_metric  name={m["name"]}',
-            "fields": {
-                "latency_ms": f'{m.get("latency_ms", 0):.0f}',
-                "tokens_in":  str(m.get("tokens_in", 0)),
-                "tokens_out": str(m.get("tokens_out", 0)),
-            },
-        })
-
-    # Tool metrics
-    for m in tool_metrics:
-        log_events.append({
-            "ts": m.get("timestamp", "")[:19],
-            "level": "info",
-            "event": f'tool_metric  name={m.get("name", "")}',
-            "fields": {
-                "latency_ms": f'{m.get("latency_ms", 0):.0f}',
-                "tokens_in":  str(m.get("tokens_in", 0)),
-                "tokens_out": str(m.get("tokens_out", 0)),
-            },
-        })
-
-    # Call events
-    if calls:
-        call_doc = calls[0]
-        log_events.append({
-            "ts": "",
-            "level": "info",
-            "event": "outbound_call_initiated",
-            "fields": {
-                "call_sid": call_doc.get("call_sid", "")[:12] + "...",
-                "to":       call_doc.get("to_number", ""),
-                "status":   call_doc.get("status", ""),
-            },
-        })
-        for i, turn in enumerate(call_doc.get("conversation", [])):
-            role = turn.get("role", "")
-            text = turn.get("text", "")[:80] + ("..." if len(turn.get("text", "")) > 80 else "")
-            log_events.append({
-                "ts": "",
-                "level": "debug",
-                "event": f'call_turn  role={role}',
-                "fields": {"text": f'"{text}"'},
-            })
-        log_events.append({
-            "ts": "",
-            "level": "info",
-            "event": "call_completed",
-            "fields": {
-                "duration_s":   str(call_doc.get("duration_seconds", "—")),
-                "final_status": call_doc.get("status", ""),
-            },
-        })
-
-    # HITL decisions
-    if sl_status:
-        log_events.append({
-            "ts": "",
-            "level": "info",
-            "event": "hitl_decision  gate=shortlist",
-            "fields": {"decision": sl_status, "feedback": snap.get("shortlist_approval_feedback", "")},
-        })
-    if ps_status:
-        log_events.append({
-            "ts": "",
-            "level": "info",
-            "event": "hitl_decision  gate=pre_screening",
-            "fields": {"decision": ps_status, "feedback": snap.get("pre_screening_approval_feedback", "")},
-        })
-
-    # Session complete
-    log_events.append({
-        "ts": "",
-        "level": "info",
-        "event": "workflow_complete",
-        "fields": {"final_step": snap.get("current_step", ""), "session_id": session_id[:8] + "..."},
-    })
-
+    # ── Try to read real captured log file first ─────────────────────────
+    log_file = Path("logs") / f"{session_id}.jsonl"
     terminal_html = ""
-    for entry in log_events:
-        terminal_html += _log_line(
-            entry["ts"],
-            entry["level"],
-            entry["event"],
-            entry["fields"],
+
+    if log_file.exists():
+        # Real logs captured by the file sink — render every line exactly as printed
+        print(f"📄 Reading real log file: {log_file} ({log_file.stat().st_size} bytes)")
+        raw_lines = log_file.read_text().splitlines()
+        for raw in raw_lines:
+            if not raw.strip():
+                continue
+            try:
+                rec = json.loads(raw)
+            except json.JSONDecodeError:
+                # Fallback: render as plain text
+                terminal_html += (
+                    f'<div class="log-line">'
+                    f'<span class="log-evt" style="color:#64748b">{raw}</span>'
+                    f'</div>'
+                )
+                continue
+
+            ts    = str(rec.pop("timestamp", ""))[:19]
+            level = str(rec.pop("level", "info"))
+            event = str(rec.pop("event", ""))
+            # Remove noise keys
+            rec.pop("logger", None)
+            rec.pop("_logger", None)
+            terminal_html += _log_line(ts, level, event, {k: str(v) for k, v in rec.items()})
+
+    else:
+        # No log file — fall back to reconstructed snapshot data and note it
+        terminal_html += (
+            '<div class="log-line" style="margin-bottom:12px;">'
+            '<span class="log-evt" style="color:#fbbf24">'
+            '⚠ No log file found for this session (logs captured from next run onwards). '
+            'Showing reconstructed events from MongoDB snapshot.'
+            '</span></div>'
         )
+        history = snap.get("workflow_history", [])
+        log_events = []
+
+        created_at = session.get("created_at") or session.get("_id").generation_time.isoformat() if session.get("_id") else ""
+        log_events.append({"ts": str(created_at)[:19], "level": "info",  "event": "workflow_started",  "fields": {"session_id": session_id[:8] + "..."}})
+        log_events.append({"ts": str(created_at)[:19], "level": "info",  "event": "mongodb_connected", "fields": {"db": "hr_workflow"}})
+
+        for h in history:
+            log_events.append({"ts": h.get("timestamp", "")[:19], "level": "info", "event": f'node_completed  step={h.get("step", "")}', "fields": {}})
+            log_events.append({"ts": h.get("timestamp", "")[:19], "level": "info", "event": h.get("summary", ""),
+                                "fields": {k: str(v) for k, v in h.items() if k not in ("step", "timestamp", "summary")}})
+
+        for m in agent_metrics:
+            log_events.append({"ts": m.get("timestamp", "")[:19], "level": "info", "event": f'agent_metric  name={m["name"]}',
+                                "fields": {"latency_ms": f'{m.get("latency_ms",0):.0f}', "tokens_in": str(m.get("tokens_in",0)), "tokens_out": str(m.get("tokens_out",0))}})
+
+        if calls:
+            call_doc = calls[0]
+            log_events.append({"ts": "", "level": "info", "event": "outbound_call_initiated",
+                                "fields": {"call_sid": call_doc.get("call_sid","")[:12]+"...", "to": call_doc.get("to_number",""), "status": call_doc.get("status","")}})
+            for turn in call_doc.get("conversation", []):
+                text = turn.get("text","")[:80] + ("..." if len(turn.get("text","")) > 80 else "")
+                log_events.append({"ts": "", "level": "debug", "event": f'call_turn  role={turn.get("role","")}', "fields": {"text": f'"{text}"'}})
+            log_events.append({"ts": "", "level": "info", "event": "call_completed",
+                                "fields": {"duration_s": str(call_doc.get("duration_seconds","—")), "final_status": call_doc.get("status","")}})
+
+        if sl_status:
+            log_events.append({"ts": "", "level": "info", "event": "hitl_decision  gate=shortlist",
+                                "fields": {"decision": sl_status, "feedback": snap.get("shortlist_approval_feedback","")}})
+        if ps_status:
+            log_events.append({"ts": "", "level": "info", "event": "hitl_decision  gate=pre_screening",
+                                "fields": {"decision": ps_status, "feedback": snap.get("pre_screening_approval_feedback","")}})
+
+        log_events.append({"ts": "", "level": "info", "event": "workflow_complete", "fields": {"final_step": snap.get("current_step","")}})
+
+        for entry in log_events:
+            terminal_html += _log_line(entry["ts"], entry["level"], entry["event"], entry["fields"])
 
     html = HTML_TEMPLATE.format(
         session_id=session_id,
