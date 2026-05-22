@@ -1,3 +1,8 @@
+## 🎥 Demo Video
+
+[Watch Full Demo Video](https://drive.google.com/your-link)
+
+
 # Agentic HR — AI-Powered Recruitment Pipeline
 
 An end-to-end autonomous recruitment pipeline built with multi-agent AI. The system replaces repetitive HR coordination tasks with a chain of specialised AI agents, each handling one stage of the hiring process — while keeping humans in control at every decision point through built-in approval gates.
@@ -121,6 +126,8 @@ The screenshots below follow a real end-to-end run in sequence — from uploadin
 
 **12. Step history drawer — Pre-Screening Calls results for all candidates**
 ![Pre-screening calls drawer](12.png)
+**12. Complete Run log**
+![Pre-screening calls drawer](13.png)
 
 ---
 

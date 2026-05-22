@@ -47,12 +47,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .green  {{ background: #14532d44; color: #4ade80; border: 1px solid #166534; }}
   .blue   {{ background: #1e3a5f44; color: #60a5fa; border: 1px solid #1e40af; }}
   .gray   {{ background: #1f293744; color: #94a3b8; border: 1px solid #334155; }}
+  .red    {{ background: #3b0f0f44; color: #f87171; border: 1px solid #7f1d1d; }}
   .kv     {{ display: flex; justify-content: space-between; align-items: flex-start;
              padding: 8px 0; border-bottom: 1px solid #2d3148; font-size: 13px; }}
   .kv:last-child {{ border-bottom: none; }}
   .kv .k  {{ color: #94a3b8; flex-shrink: 0; margin-right: 12px; }}
   .kv .v  {{ color: #e2e8f0; text-align: right; word-break: break-word; }}
-  .skill-list {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }}
+  .skill-list {{ display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }}
   .skill {{ background: #1e3a5f44; border: 1px solid #1e40af44; color: #93c5fd;
             font-size: 11px; padding: 2px 8px; border-radius: 4px; }}
   .timeline {{ list-style: none; position: relative; padding-left: 24px; }}
@@ -64,18 +65,43 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                            background:#4ade80; border:2px solid #14532d; }}
   .timeline .ts  {{ font-size: 11px; color: #64748b; margin-bottom: 2px; }}
   .timeline .msg {{ color: #e2e8f0; }}
+
+  /* Data table */
+  .data-table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+  .data-table th {{
+    text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; color: #64748b; border-bottom: 1px solid #2d3148;
+    white-space: nowrap;
+  }}
+  .data-table td {{ padding: 10px 12px; border-bottom: 1px solid #1e293766; vertical-align: top; }}
+  .data-table tr:last-child td {{ border-bottom: none; }}
+  .data-table tr:hover td {{ background: #ffffff08; }}
+  .score-pill {{ font-size: 16px; font-weight: 800; color: #4ade80; }}
+  .reason-cell {{ color: #94a3b8; font-style: italic; max-width: 260px; }}
+  .name-cell {{ font-weight: 600; color: #e2e8f0; }}
+  .meta-cell {{ color: #94a3b8; font-size: 12px; }}
+
+  /* Transcript */
+  .cand-section {{ margin-bottom: 24px; }}
+  .cand-section-header {{
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; font-weight: 700; color: #e2e8f0;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid #2d3148;
+  }}
   .convo {{ font-size: 13px; }}
   .turn  {{ display: flex; gap: 10px; margin-bottom: 12px; }}
-  .turn .who {{ font-size: 11px; font-weight: 700; min-width: 64px; padding-top: 2px; }}
+  .turn .who {{ font-size: 11px; font-weight: 700; min-width: 72px; padding-top: 2px; }}
   .agent-who {{ color: #818cf8; }}
   .cand-who  {{ color: #34d399; }}
-  .turn .txt {{ background: #1e2130; border: 1px solid #2d3148; border-radius: 8px;
+  .turn .txt {{ background: #111827; border: 1px solid #2d3148; border-radius: 8px;
                 padding: 8px 12px; color: #e2e8f0; flex: 1; }}
+  .no-transcript {{ color: #64748b; font-style: italic; font-size: 13px; padding: 12px 0; }}
+
+  .full {{ grid-column: 1 / -1; }}
   .section-title {{ font-size: 13px; font-weight: 600; color: #94a3b8;
                     text-transform: uppercase; letter-spacing: .06em;
                     margin: 24px 0 10px; }}
-  .full {{ grid-column: 1 / -1; }}
-  .score {{ font-size: 28px; font-weight: 800; color: #4ade80; }}
 
   /* Terminal / Logs tab */
   .terminal {{
@@ -94,7 +120,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .lvl-debug   {{ color: #818cf8; }}
   .log-sep {{ border: none; border-top: 1px solid #1e2d40; margin: 12px 0; }}
 
-  /* Metric cards inside logs tab */
   .metric-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }}
   .metric-card {{ background: #111827; border: 1px solid #1e2d40; border-radius: 8px; padding: 14px 16px; }}
   .metric-card .m-name {{ font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: #4ade80; margin-bottom: 6px; }}
@@ -109,42 +134,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <!-- Tabs -->
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('overview', this)">Overview</button>
-  <button class="tab-btn"       onclick="showTab('transcript', this)">Call Transcript</button>
+  <button class="tab-btn"       onclick="showTab('transcript', this)">Call Transcripts</button>
   <button class="tab-btn"       onclick="showTab('logs', this)">Terminal Logs</button>
 </div>
 
 <!-- Overview tab -->
 <div id="tab-overview" class="tab-pane active">
-<div class="grid">
-  <div class="card">
-    <h2>Workflow Status</h2>
-    {status_rows}
+  <div class="grid">
+    <div class="card">
+      <h2>Workflow Status</h2>
+      {status_rows}
+    </div>
+    <div class="card">
+      <h2>Workflow Timeline</h2>
+      <ul class="timeline">{timeline_html}</ul>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Shortlisted Candidate</h2>
-    {candidate_rows}
-    <div class="skill-list">{skills_html}</div>
+  <div class="card full" style="margin-bottom:16px;">
+    <h2>Shortlisted Candidates ({candidate_count})</h2>
+    {candidates_table}
   </div>
 
-  <div class="card">
-    <h2>Pre-Screening Results</h2>
-    {screening_rows}
+  <div class="card full" style="margin-bottom:16px;">
+    <h2>Pre-Screening Results ({screening_count})</h2>
+    {screening_table}
   </div>
-
-  <div class="card">
-    <h2>Workflow Timeline</h2>
-    <ul class="timeline">{timeline_html}</ul>
-  </div>
-</div>
 </div>
 
 <!-- Transcript tab -->
 <div id="tab-transcript" class="tab-pane">
-<div class="card" style="margin-bottom:24px;">
-  <h2>Full Call Transcript</h2>
-  <div class="convo">{conversation_html}</div>
-</div>
+  {all_transcripts}
 </div>
 
 <!-- Logs tab -->
@@ -180,8 +200,10 @@ def _log_line(ts: str, level: str, event: str, fields: dict) -> str:
         "error": "lvl-error", "debug": "lvl-debug",
     }.get(level.lower(), "lvl-info")
     lvl_label = level.upper()[:4]
-    fields_str = "  " + "  ".join(f'<span style="color:#60a5fa">{k}</span>=<span style="color:#94a3b8">{v}</span>'
-                                   for k, v in fields.items()) if fields else ""
+    fields_str = "  " + "  ".join(
+        f'<span style="color:#60a5fa">{k}</span>=<span style="color:#94a3b8">{v}</span>'
+        for k, v in fields.items()
+    ) if fields else ""
     return (
         f'<div class="log-line">'
         f'<span class="log-ts">{ts_short}</span>'
@@ -189,6 +211,128 @@ def _log_line(ts: str, level: str, event: str, fields: dict) -> str:
         f'<span class="log-evt">{event}{fields_str}</span>'
         f'</div>'
     )
+
+
+def _call_status_badge(status: str) -> str:
+    color = "green" if status == "completed" else ("red" if status == "failed" else "gray")
+    return badge(status or "—", color)
+
+
+def _build_candidates_table(candidates: list[dict]) -> str:
+    if not candidates:
+        return '<p style="color:#64748b;font-size:13px;padding:8px 0;">No candidates found.</p>'
+
+    rows = ""
+    for c in candidates:
+        skills_html = "".join(
+            f'<span class="skill">{s[:30]}</span>'
+            for s in c.get("skills", [])[:12]
+        )
+        score = c.get("match_score", 0)
+        score_color = "#4ade80" if score >= 7 else ("#fbbf24" if score >= 5 else "#f87171")
+        rows += (
+            f'<tr>'
+            f'<td class="name-cell">{c.get("name","—")}</td>'
+            f'<td class="meta-cell">{c.get("current_role","—")}</td>'
+            f'<td><span style="font-size:18px;font-weight:800;color:{score_color}">{score}</span>'
+            f'<span style="color:#64748b;font-size:11px">/10</span></td>'
+            f'<td><div class="skill-list">{skills_html}</div></td>'
+            f'<td class="reason-cell">{c.get("selection_reason","—")}</td>'
+            f'</tr>'
+        )
+
+    return (
+        '<table class="data-table">'
+        '<thead><tr>'
+        '<th>Name</th><th>Current Role</th><th>Score</th><th>Skills</th><th>Selection Reason</th>'
+        '</tr></thead>'
+        f'<tbody>{rows}</tbody>'
+        '</table>'
+    )
+
+
+def _build_screening_table(results: list[dict]) -> str:
+    if not results:
+        return '<p style="color:#64748b;font-size:13px;padding:8px 0;">No pre-screening results found.</p>'
+
+    rows = ""
+    for r in results:
+        looking = r.get("looking_for_change")
+        looking_badge = badge("Yes", "green") if looking is True else (badge("No", "gray") if looking is False else badge("—", "gray"))
+        exp = r.get("experience_years")
+        exp_str = f"{exp} yrs" if exp else "—"
+        rows += (
+            f'<tr>'
+            f'<td class="name-cell">{r.get("name","—")}</td>'
+            f'<td>{looking_badge}</td>'
+            f'<td class="reason-cell">{r.get("reason_for_change") or "—"}</td>'
+            f'<td>{r.get("current_ctc") or "—"}</td>'
+            f'<td>{r.get("expected_ctc") or "—"}</td>'
+            f'<td>{r.get("availability") or "—"}</td>'
+            f'<td>{exp_str}</td>'
+            f'<td>{_call_status_badge(r.get("call_status",""))}</td>'
+            f'</tr>'
+        )
+
+    return (
+        '<table class="data-table">'
+        '<thead><tr>'
+        '<th>Name</th><th>Looking for Change</th><th>Reason</th>'
+        '<th>Current CTC</th><th>Expected CTC</th>'
+        '<th>Availability</th><th>Experience</th><th>Call Status</th>'
+        '</tr></thead>'
+        f'<tbody>{rows}</tbody>'
+        '</table>'
+    )
+
+
+def _build_all_transcripts(calls: list[dict], results: list[dict]) -> str:
+    if not calls:
+        return '<div class="card"><p class="no-transcript">No call records found for this session.</p></div>'
+
+    # Build name lookup from pre-screening results (candidate_id → name)
+    name_by_candidate = {r.get("candidate_id", ""): r.get("name", "") for r in results}
+
+    html = ""
+    for call_doc in calls:
+        cid = call_doc.get("candidate_id", "")
+        name = name_by_candidate.get(cid) or call_doc.get("candidate_name") or cid or "Unknown Candidate"
+        status = call_doc.get("status", "—")
+        call_sid = call_doc.get("call_sid", "")
+        turns = call_doc.get("conversation", [])
+
+        status_b = _call_status_badge(status)
+        turns_count = len(turns)
+
+        if turns:
+            convo_html = ""
+            for turn in turns:
+                role = turn.get("role", "")
+                text = turn.get("text", "")
+                who_class = "agent-who" if role == "agent" else "cand-who"
+                who_label = "AI Agent" if role == "agent" else "Candidate"
+                convo_html += (
+                    f'<div class="turn">'
+                    f'<div class="who {who_class}">{who_label}</div>'
+                    f'<div class="txt">{text}</div>'
+                    f'</div>'
+                )
+        else:
+            convo_html = '<p class="no-transcript">No conversation recorded (call did not connect or was not answered).</p>'
+
+        sid_short = f'<span style="color:#64748b;font-size:11px;font-weight:400">{call_sid[:16]}…</span>' if call_sid else ""
+        html += (
+            f'<div class="card cand-section" style="margin-bottom:16px;">'
+            f'<div class="cand-section-header">'
+            f'{name} &nbsp; {status_b} &nbsp; '
+            f'<span style="color:#64748b;font-size:12px;font-weight:400">{turns_count} turns</span>'
+            f'&nbsp; {sid_short}'
+            f'</div>'
+            f'<div class="convo">{convo_html}</div>'
+            f'</div>'
+        )
+
+    return html
 
 
 async def build_report(session_id: str) -> str:
@@ -215,40 +359,13 @@ async def build_report(session_id: str) -> str:
         kv("Error", snap.get("error") or badge("None", "green"))
     )
 
-    # ── Candidate rows ───────────────────────────────────────────────────
+    # ── Candidates table ─────────────────────────────────────────────────
     candidates = snap.get("shortlisted_candidates", [])
-    candidate_rows = ""
-    skills_html = ""
-    if candidates:
-        c = candidates[0]
-        score = c.get("match_score", 0)
-        candidate_rows = (
-            kv("Name", f'<strong>{c.get("name","—")}</strong>') +
-            kv("Email", c.get("email", "—")) +
-            kv("Phone", c.get("phone", "—")) +
-            kv("Role", c.get("current_role", "—")) +
-            kv("Match Score", f'<span class="score">{score}</span><span style="color:#64748b">/10</span>') +
-            kv("Reason", f'<em style="color:#94a3b8">{c.get("selection_reason","")}</em>')
-        )
-        skills_html = "".join(
-            f'<span class="skill">{s[:40]}</span>'
-            for s in c.get("skills", [])[:20]
-        )
+    candidates_table = _build_candidates_table(candidates)
 
-    # ── Screening rows ───────────────────────────────────────────────────
+    # ── Screening table ──────────────────────────────────────────────────
     results = snap.get("pre_screening_results", [])
-    screening_rows = ""
-    if results:
-        r = results[0]
-        screening_rows = (
-            kv("Looking for Change", badge("Yes", "green") if r.get("looking_for_change") else badge("No", "gray")) +
-            kv("Reason", r.get("reason_for_change") or "—") +
-            kv("Current CTC", r.get("current_ctc") or "—") +
-            kv("Expected CTC", r.get("expected_ctc") or "—") +
-            kv("Availability", r.get("availability") or "—") +
-            kv("Experience", f'{r.get("experience_years") or "—"} yrs' if r.get("experience_years") else "—") +
-            kv("Call Status", badge(r.get("call_status", "—"), "green" if r.get("call_status") == "completed" else "gray"))
-        )
+    screening_table = _build_screening_table(results)
 
     # ── Timeline ─────────────────────────────────────────────────────────
     timeline_html = ""
@@ -259,26 +376,13 @@ async def build_report(session_id: str) -> str:
             f'<div class="msg">{h.get("summary","")}</div></li>'
         )
 
-    # ── Conversation ─────────────────────────────────────────────────────
-    conversation_html = ""
-    if calls:
-        for turn in calls[0].get("conversation", []):
-            role = turn.get("role", "")
-            text = turn.get("text", "")
-            who_class = "agent-who" if role == "agent" else "cand-who"
-            who_label = "AI Agent" if role == "agent" else "Candidate"
-            conversation_html += (
-                f'<div class="turn">'
-                f'<div class="who {who_class}">{who_label}</div>'
-                f'<div class="txt">{text}</div>'
-                f'</div>'
-            )
+    # ── All transcripts ───────────────────────────────────────────────────
+    all_transcripts = _build_all_transcripts(calls, results)
 
     # ── Terminal Logs tab ─────────────────────────────────────────────────
     agent_metrics = snap.get("agent_metrics", [])
     tool_metrics  = snap.get("tool_metrics", [])
 
-    # Metric summary cards
     total_tokens_in  = sum(m.get("tokens_in", 0)  for m in agent_metrics + tool_metrics)
     total_tokens_out = sum(m.get("tokens_out", 0) for m in agent_metrics + tool_metrics)
     total_latency    = sum(m.get("latency_ms", 0) for m in agent_metrics + tool_metrics)
@@ -296,6 +400,12 @@ async def build_report(session_id: str) -> str:
 
         f'<div class="metric-card"><div class="m-name">Total Latency</div>'
         f'<div class="m-val">{total_latency/1000:.1f}s</div><div class="m-sub">agent processing time</div></div>'
+
+        f'<div class="metric-card"><div class="m-name">Candidates</div>'
+        f'<div class="m-val">{len(candidates)}</div><div class="m-sub">shortlisted</div></div>'
+
+        f'<div class="metric-card"><div class="m-name">Calls</div>'
+        f'<div class="m-val">{len(calls)}</div><div class="m-sub">placed</div></div>'
     )
 
     # ── Try to read real captured log file first ─────────────────────────
@@ -303,8 +413,7 @@ async def build_report(session_id: str) -> str:
     terminal_html = ""
 
     if log_file.exists():
-        # Real logs captured by the file sink — render every line exactly as printed
-        print(f"📄 Reading real log file: {log_file} ({log_file.stat().st_size} bytes)")
+        print(f"Reading log file: {log_file} ({log_file.stat().st_size} bytes)")
         raw_lines = log_file.read_text().splitlines()
         for raw in raw_lines:
             if not raw.strip():
@@ -312,7 +421,6 @@ async def build_report(session_id: str) -> str:
             try:
                 rec = json.loads(raw)
             except json.JSONDecodeError:
-                # Fallback: render as plain text
                 terminal_html += (
                     f'<div class="log-line">'
                     f'<span class="log-evt" style="color:#64748b">{raw}</span>'
@@ -323,24 +431,24 @@ async def build_report(session_id: str) -> str:
             ts    = str(rec.pop("timestamp", ""))[:19]
             level = str(rec.pop("level", "info"))
             event = str(rec.pop("event", ""))
-            # Remove noise keys
             rec.pop("logger", None)
             rec.pop("_logger", None)
             terminal_html += _log_line(ts, level, event, {k: str(v) for k, v in rec.items()})
 
     else:
-        # No log file — fall back to reconstructed snapshot data and note it
         terminal_html += (
             '<div class="log-line" style="margin-bottom:12px;">'
             '<span class="log-evt" style="color:#fbbf24">'
-            '⚠ No log file found for this session (logs captured from next run onwards). '
+            '⚠ No log file found for this session. '
             'Showing reconstructed events from MongoDB snapshot.'
             '</span></div>'
         )
         history = snap.get("workflow_history", [])
         log_events = []
 
-        created_at = session.get("created_at") or session.get("_id").generation_time.isoformat() if session.get("_id") else ""
+        created_at = session.get("created_at") or (
+            session.get("_id").generation_time.isoformat() if session.get("_id") else ""
+        )
         log_events.append({"ts": str(created_at)[:19], "level": "info",  "event": "workflow_started",  "fields": {"session_id": session_id[:8] + "..."}})
         log_events.append({"ts": str(created_at)[:19], "level": "info",  "event": "mongodb_connected", "fields": {"db": "hr_workflow"}})
 
@@ -353,10 +461,12 @@ async def build_report(session_id: str) -> str:
             log_events.append({"ts": m.get("timestamp", "")[:19], "level": "info", "event": f'agent_metric  name={m["name"]}',
                                 "fields": {"latency_ms": f'{m.get("latency_ms",0):.0f}', "tokens_in": str(m.get("tokens_in",0)), "tokens_out": str(m.get("tokens_out",0))}})
 
-        if calls:
-            call_doc = calls[0]
+        for call_doc in calls:
             log_events.append({"ts": "", "level": "info", "event": "outbound_call_initiated",
-                                "fields": {"call_sid": call_doc.get("call_sid","")[:12]+"...", "to": call_doc.get("to_number",""), "status": call_doc.get("status","")}})
+                                "fields": {"call_sid": call_doc.get("call_sid","")[:12]+"...",
+                                           "to": call_doc.get("to_number",""),
+                                           "candidate": call_doc.get("candidate_id",""),
+                                           "status": call_doc.get("status","")}})
             for turn in call_doc.get("conversation", []):
                 text = turn.get("text","")[:80] + ("..." if len(turn.get("text","")) > 80 else "")
                 log_events.append({"ts": "", "level": "debug", "event": f'call_turn  role={turn.get("role","")}', "fields": {"text": f'"{text}"'}})
@@ -379,11 +489,12 @@ async def build_report(session_id: str) -> str:
         session_id=session_id,
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         status_rows=status_rows,
-        candidate_rows=candidate_rows,
-        skills_html=skills_html,
-        screening_rows=screening_rows,
+        candidate_count=len(candidates),
+        candidates_table=candidates_table,
+        screening_count=len(results),
+        screening_table=screening_table,
         timeline_html=timeline_html,
-        conversation_html=conversation_html,
+        all_transcripts=all_transcripts,
         metric_cards_html=metric_cards_html,
         terminal_html=terminal_html,
     )
@@ -397,7 +508,7 @@ async def save_report(session_id: str) -> str:
     out = f"run_log_{session_id[:8]}.html"
     with open(out, "w") as f:
         f.write(html)
-    print(f"✅ Report saved: {out}")
+    print(f"Report saved: {out}")
     return out
 
 
