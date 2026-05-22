@@ -39,6 +39,7 @@ class PreScreenerAgent(BaseAgent):
                 call_sids.append(sid)
             # Block until this call finishes before dialling the next one
             await self._wait_for_one_call(session_id, candidate["candidate_id"])
+            await asyncio.sleep(3)  # brief pause so webhooks drain before next call
 
         # ── Step 2: Build final results from completed call records ───────
         call_docs = await db.get_session_calls(session_id)

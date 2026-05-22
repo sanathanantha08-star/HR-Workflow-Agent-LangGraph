@@ -75,7 +75,7 @@ async def twilio_gather(
     )
 
     if not SpeechResult:
-        twiml = await handle_no_speech(call_sid, candidate_name, session_id)
+        twiml = await handle_no_speech(call_sid, candidate_name, session_id, retries=0)
     else:
         twiml = await handle_speech_input(call_sid, candidate_name, session_id, SpeechResult)
 
@@ -88,10 +88,11 @@ async def twilio_no_speech(
     call_sid: str = Query(...),
     session_id: str = Query(...),
     candidate_name: str = Query(...),
+    retries: int = Query(default=0),
 ):
     """Called when <Gather> redirect fires with no speech input."""
-    logger.info("twilio_no_speech", call_sid=call_sid, session_id=session_id)
-    twiml = await handle_no_speech(call_sid, candidate_name, session_id)
+    logger.info("twilio_no_speech", call_sid=call_sid, session_id=session_id, retries=retries)
+    twiml = await handle_no_speech(call_sid, candidate_name, session_id, retries=retries)
     return Response(content=twiml, media_type=TWIML_CONTENT_TYPE)
 
 
