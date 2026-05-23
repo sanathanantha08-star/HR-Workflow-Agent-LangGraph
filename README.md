@@ -91,61 +91,61 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
 The screenshots below follow a real end-to-end run in sequence — from uploading files to workflow completion, including the clickable step-history drawers and the HTML run log.
 
 **1. Upload screen — clean landing page, drop zones for JD and resumes**
-![Upload screen empty](1.png)
+![Upload screen empty](public/images/1.png)
 
 **2. Files selected — JD and 3 candidate resumes ready to launch**
-![Files selected and ready](2.png)
+![Files selected and ready](public/images/2.png)
 
 **3. Resume Parser agent active — pipeline nodes light up, parsing in progress**
-![Resume Parser agent working](4.png)
+![Resume Parser agent working](public/images/4.png)
 
 **4. HITL Gate 1 — shortlisted candidates with match scores, awaiting recruiter approval**
-![Shortlist review](3.png)
+![Shortlist review](public/images/3.png)
 
 **5. Pre-Screening Calls — AI voice agent calling candidates sequentially (1 of 2 done)**
-![Pre-screening calls in progress](5.png)
+![Pre-screening calls in progress](public/images/5.png)
 
 **6. HITL Gate 2 — pre-screening results collected, recruiter reviews before completing**
-![Pre-screening results review](6.png)
+![Pre-screening results review](public/images/6.png)
 
 **7. Workflow Complete — all pipeline nodes green, run log ready to open**
-![Workflow complete](7.png)
+![Workflow complete](public/images/7.png)
 
 **8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timeline**
-![Run log overview tab](8.png)
+![Run log overview tab](public/images/8.png)
 
 **9. HTML Run Log — Call Transcript tab showing the full AI-conducted conversation**
-![Run log call transcript](9.png)
+![Run log call transcript](public/images/9.png)
 
 **10. Step history drawer — clicking a done node shows Resume Analysis data inline**
-![Resume analysis drawer](10.png)
+![Resume analysis drawer](public/images/10.png)
 
 **11. Step history drawer — Shortlist Approval decision and AI rationale**
-![Shortlist approval drawer](11.png)
+![Shortlist approval drawer](public/images/11.png)
 
 **12. Step history drawer — Pre-Screening Calls results for all candidates**
-![Pre-screening calls drawer](12.png)
+![Pre-screening calls drawer](public/images/12.png)
 
 **13. Complete Run log**
-![Complete run log](13.png)
+![Complete run log](public/images/13.png)
 
 **14. HITL Gate 2 (Final Review) — Pre-screening results displayed with candidate's CTC, experience, reason for change, and declared interview slots. Recruiter clicks "Approve & Schedule Interviews" to trigger the scheduler.**
-![Final review HITL gate with pre-screening data](14.png)
+![Final review HITL gate with pre-screening data](public/images/14.png)
 
 **15. Interview Scheduler Agent active — agent checks the recruiter's Google Calendar for available 1-hour slots within the candidate's declared window and queues confirmation emails.**
-![Interview scheduler agent running](15.png)
+![Interview scheduler agent running](public/images/15.png)
 
 **16. Workflow Complete — all pipeline nodes green. Interview scheduled for 1 candidate; confirmation emails dispatched to both candidate and recruiter.**
-![Full workflow complete with interview scheduled](16.png)
+![Full workflow complete with interview scheduled](public/images/16.png)
 
 **17. Candidate's inbox — professional Round 1 interview confirmation email sent from the HR agent account, showing date, time, duration, mode (Google Meet), and the live meeting link.**
-![Candidate interview confirmation email](17.png)
+![Candidate interview confirmation email](public/images/17.png)
 
 **18. Candidate's inbox — Google Calendar invite received for the interview, with a "Join with Google Meet" button and the meeting link visible directly in the email.**
-![Recruiter Google Calendar invite email](18.png)
+![Recruiter Google Calendar invite email](public/images/18.png)
 
 **19. Recruiter's Google Calendar — 1-hour interview event ("Interview: SANATH ANANTHA DEVADIGA, 8–9am") created automatically on the correct date, with the Google Meet link attached.**
-![Interview event on recruiter Google Calendar](19.png)
+![Interview event on recruiter Google Calendar](public/images/19.png)
 
 ---
 
