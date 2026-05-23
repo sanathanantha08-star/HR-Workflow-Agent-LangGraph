@@ -111,7 +111,7 @@ The screenshots below follow a real end-to-end run in sequence — from uploadin
 **7. Workflow Complete — all pipeline nodes green, run log ready to open**
 ![Workflow complete](public/images/7.png)
 
-**8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timeline**
+**8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timelinee**
 ![Run log overview tab](public/images/8.png)
 
 **9. HTML Run Log — Call Transcript tab showing the full AI-conducted conversation**
