@@ -103,6 +103,7 @@ async def get_workflow_status(session_id: str):
         pre_screening_approval_status=snap.get("pre_screening_approval_status", "pending"),
         shortlisted_candidates=snap.get("shortlisted_candidates", []),
         pre_screening_results=snap.get("pre_screening_results", []),
+        email_scheduling_results=snap.get("email_scheduling_results", []),
         workflow_history=snap.get("workflow_history", []),
         error=snap.get("error"),
     )

@@ -40,6 +40,11 @@ tenacity>=9.0.0
 structlog>=24.0.0
 python-json-logger>=2.0.0
 
+# Google APIs (Calendar + auth)
+google-api-python-client>=2.100.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.0
+
 # Utilities
 python-dotenv>=1.0.0
 python-dateutil>=2.9.0

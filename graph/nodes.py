@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage
 from models.state import HRWorkflowState
 from agents.resume_shortlister import resume_shortlister_agent
 from agents.pre_screener import pre_screener_agent
+from agents.email_interview_scheduler import email_interview_scheduler_agent
 from tools.storage_tools import save_session_state, save_shortlisted_candidates
 from core.logging import get_logger
 from core.observability import build_metric
@@ -173,6 +174,48 @@ async def pre_screening_node(state: HRWorkflowState) -> dict:
         "agent_metrics": [
             _agent_metric("pre_screener", latency_ms)
         ],
+        "messages": [AIMessage(content=summary)],
+    }
+
+
+# ── Node: email_interview_scheduler ───────────────────────────────────────────
+
+async def email_interview_scheduler_node(state: HRWorkflowState) -> dict:
+    """Schedule interviews via Google Calendar and send confirmation emails."""
+    logger.info("node_email_interview_scheduler", session_id=state["session_id"])
+    start = time.perf_counter()
+
+    result = await email_interview_scheduler_agent.arun(
+        session_id=state["session_id"],
+        pre_screening_results=state.get("pre_screening_results", []),
+    )
+
+    latency_ms = (time.perf_counter() - start) * 1000
+    scheduling_results = result["email_scheduling_results"]
+    scheduled_count = sum(1 for r in scheduling_results if r["status"] == "scheduled")
+    summary = (
+        f"Interview scheduling complete: {scheduled_count}/{len(scheduling_results)} candidates "
+        "scheduled. Confirmation emails sent."
+    )
+
+    logger.info(
+        "email_interview_scheduler_complete",
+        session_id=state["session_id"],
+        scheduled=scheduled_count,
+        total=len(scheduling_results),
+    )
+
+    return {
+        "email_scheduling_results": scheduling_results,
+        "current_step": "emails_sent",
+        "workflow_history": [
+            _history_entry(
+                "email_interview_scheduler",
+                summary,
+                {"scheduled_count": scheduled_count, "total": len(scheduling_results)},
+            )
+        ],
+        "agent_metrics": [_agent_metric("email_interview_scheduler", latency_ms)],
         "messages": [AIMessage(content=summary)],
     }
 

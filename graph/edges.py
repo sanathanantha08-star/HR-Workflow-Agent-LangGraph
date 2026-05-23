@@ -26,14 +26,14 @@ def route_after_shortlist_hitl(state: HRWorkflowState) -> str:
 def route_after_pre_screening_hitl(state: HRWorkflowState) -> str:
     """
     After the HITL pre-screening gate:
-    - approved  → workflow complete
+    - approved  → schedule interviews and send emails
     - rejected  → redo pre-screening calls
     """
     status = state.get("pre_screening_approval_status", "pending")
     logger.info("route_pre_screening_hitl", status=status, session_id=state.get("session_id"))
 
     if status == "approved":
-        return END
+        return "email_interview_scheduler"
     elif status == "rejected":
         return "pre_screening"
     return "hitl_pre_screening"

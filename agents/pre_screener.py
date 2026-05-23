@@ -131,8 +131,8 @@ class PreScreenerAgent(BaseAgent):
                 "reason_for_change": screening.get("reason_for_change"),
                 "current_ctc": screening.get("current_ctc"),
                 "expected_ctc": screening.get("expected_ctc"),
-                "availability": screening.get("availability"),
                 "experience_years": screening.get("experience_years"),
+                "interview_slots": screening.get("interview_slots"),
             })
         return results
 

@@ -7,6 +7,7 @@ from graph.nodes import (
     hitl_shortlist_node,
     pre_screening_node,
     hitl_pre_screening_node,
+    email_interview_scheduler_node,
 )
 from graph.edges import route_after_shortlist_hitl, route_after_pre_screening_hitl
 from core.logging import get_logger
@@ -31,6 +32,7 @@ def build_graph():
     builder.add_node("hitl_shortlist", hitl_shortlist_node)
     builder.add_node("pre_screening", pre_screening_node)
     builder.add_node("hitl_pre_screening", hitl_pre_screening_node)
+    builder.add_node("email_interview_scheduler", email_interview_scheduler_node)
 
     # Edges
     builder.add_edge(START, "parse_uploads")
@@ -53,11 +55,13 @@ def build_graph():
         "hitl_pre_screening",
         route_after_pre_screening_hitl,
         {
-            END: END,
+            "email_interview_scheduler": "email_interview_scheduler",
             "pre_screening": "pre_screening",
             "hitl_pre_screening": "hitl_pre_screening",
         },
     )
+
+    builder.add_edge("email_interview_scheduler", END)
 
     # interrupt_before pauses execution before these nodes, allowing HITL
     _graph = builder.compile(

@@ -79,8 +79,8 @@ class PreScreeningData(BaseModel):
     reason_for_change: Optional[str] = None
     current_ctc: Optional[str] = None
     expected_ctc: Optional[str] = None
-    availability: Optional[str] = None
     experience_years: Optional[str] = None
+    interview_slots: Optional[list[str]] = None  # e.g. ["Available on Monday, May 25 from 8 AM to 12 PM"]
     call_sid: str = ""
     call_status: str = "initiated"   # initiated | completed | failed | no_answer
 
@@ -111,5 +111,6 @@ class WorkflowStatusResponse(BaseModel):
     pre_screening_approval_status: str
     shortlisted_candidates: list[dict]
     pre_screening_results: list[dict]
+    email_scheduling_results: list[dict] = []
     workflow_history: list[dict]
     error: Optional[str] = None

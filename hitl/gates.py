@@ -98,8 +98,8 @@ async def _maybe_recover_pre_screening(session_id: str, state_update: dict) -> d
             "reason_for_change": sd.get("reason_for_change"),
             "current_ctc": sd.get("current_ctc"),
             "expected_ctc": sd.get("expected_ctc"),
-            "availability": sd.get("availability"),
             "experience_years": sd.get("experience_years"),
+            "interview_slots": sd.get("interview_slots"),
         })
 
     logger.info("pre_screening_recovery", session_id=session_id, recovered=len(results))

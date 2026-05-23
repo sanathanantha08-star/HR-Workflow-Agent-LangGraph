@@ -148,6 +148,16 @@ def llm_generate_call_response(
     Generate the next conversational response in a pre-screening call.
     Returns {reply, is_complete, updated_screening_data, tokens_in, tokens_out}.
     """
+    import datetime
+    today = datetime.date.today()
+    # Build this week's remaining days (Mon–Fri)
+    week_days = []
+    for i in range(7):
+        d = today + datetime.timedelta(days=i)
+        if d.weekday() < 5:  # Monday=0 … Friday=4
+            week_days.append(d.strftime("%A, %B %-d"))
+    week_days_str = ", ".join(week_days) if week_days else "this week"
+
     history_text = "\n".join(
         f"{turn['role'].upper()}: {turn['text']}" for turn in conversation_history[-10:]
     )
@@ -157,15 +167,21 @@ def llm_generate_call_response(
         f"You are an AI HR recruiter calling {candidate_name} on behalf of {company_name} "
         "for a job pre-screening. Your goal is to naturally gather: "
         "(1) Are they open to a job change, (2) Reason for change, "
-        "(3) Current CTC, (4) Expected CTC, (5) Availability for interview, "
-        "(6) Total years of professional experience. "
+        "(3) Current CTC, (4) Expected CTC, (5) Total years of professional experience, "
+        "(6) Which days this week they are available for an interview and the preferred time slot on each of those days. "
+        f"This week's available weekdays are: {week_days_str}. "
+        "When asking about interview availability, ask which days this week work for them AND what time slot they prefer on each day. "
+        "After the candidate answers, confirm each slot back to them in this exact format: "
+        "'Available on <Day>, <Month> <Date> from <start time> to <end time>.' "
+        "For example: 'Available on Monday, May 25 from 8 AM to 12 PM.' "
+        "Collect ALL their available slots before marking is_complete. "
         "Be professional, warm, and concise. Keep responses under 3 sentences. "
         "Return ONLY valid JSON: "
         '{"reply": <str>, "is_complete": <bool>, '
         '"screening_data": {"looking_for_change": <bool|null>, '
         '"reason_for_change": <str|null>, "current_ctc": <str|null>, '
-        '"expected_ctc": <str|null>, "availability": <str|null>, '
-        '"experience_years": <str|null>}}. '
+        '"expected_ctc": <str|null>, "experience_years": <str|null>, '
+        '"interview_slots": <list of strings like "Available on Monday, May 25 from 8 AM to 12 PM" | null>}}. '
         "Set is_complete to true only when all 6 fields are collected or candidate declines."
     )
     user = (

@@ -28,11 +28,14 @@ class HRWorkflowState(TypedDict):
     # ── Pre-screening calls ────────────────────────────────────────────────
     call_sids: list[str]                   # Twilio call SIDs initiated
     pre_screening_results: list[dict]      # [{candidate_id, looking_for_change, reason,
-                                           #   current_ctc, expected_ctc, availability, call_sid}]
+                                           #   current_ctc, expected_ctc, interview_slots, call_sid}]
 
     # ── HITL: pre-screening ────────────────────────────────────────────────
     pre_screening_approval_status: str     # "pending" | "approved" | "rejected"
     pre_screening_approval_feedback: Optional[str]
+
+    # ── Interview scheduling ───────────────────────────────────────────────
+    email_scheduling_results: list[dict]   # [{candidate_id, name, email, status, scheduled_slot, calendar_link}]
 
     # ── Workflow tracking ──────────────────────────────────────────────────
     current_step: str
@@ -64,6 +67,7 @@ def initial_state(session_id: str, thread_id: str) -> HRWorkflowState:
         pre_screening_results=[],
         pre_screening_approval_status="pending",
         pre_screening_approval_feedback=None,
+        email_scheduling_results=[],
         current_step="initialized",
         workflow_history=[],
         error=None,
