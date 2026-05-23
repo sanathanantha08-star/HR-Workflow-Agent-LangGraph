@@ -1,6 +1,6 @@
 ## 🎥 Demo Video
 
-<a href="https://drive.google.com/file/d/1-VWvtRLQaE0Ic6-zwmVFBYLLPHOKgNwj/view?usp=drive_link" target="_blank">Watch Full Demo Video</a>
+<a href="https://drive.google.com/file/d/1roehN6HuL5tVceFOhKQbtvFFYiv2vE6T/view?usp=drive_link" target="_blank">Watch Full Demo Video</a>
 
 # Agentic HR — AI-Powered Recruitment Pipeline
 
@@ -141,7 +141,7 @@ The screenshots below follow a real end-to-end run in sequence — from uploadin
 **17. Candidate's inbox — professional Round 1 interview confirmation email sent from the HR agent account, showing date, time, duration, mode (Google Meet), and the live meeting link.**
 ![Candidate interview confirmation email](17.png)
 
-**18. Recruiter's inbox — Google Calendar invite received for the interview, with a "Join with Google Meet" button and the meeting link visible directly in the email.**
+**18. Candidate's inbox — Google Calendar invite received for the interview, with a "Join with Google Meet" button and the meeting link visible directly in the email.**
 ![Recruiter Google Calendar invite email](18.png)
 
 **19. Recruiter's Google Calendar — 1-hour interview event ("Interview: SANATH ANANTHA DEVADIGA, 8–9am") created automatically on the correct date, with the Google Meet link attached.**
