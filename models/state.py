@@ -37,6 +37,11 @@ class HRWorkflowState(TypedDict):
     # ── Interview scheduling ───────────────────────────────────────────────
     email_scheduling_results: list[dict]   # [{candidate_id, name, email, status, scheduled_slot, calendar_link}]
 
+    # ── HITL: onboarding ──────────────────────────────────────────────────
+    onboarding_approval_status: str        # "pending" | "approved"
+    onboarding_selected_ids: list[str]     # candidate_ids HR selected as cleared
+    onboarding_results: list[dict]         # [{candidate_id, name, email, status}]
+
     # ── Workflow tracking ──────────────────────────────────────────────────
     current_step: str
     workflow_history: Annotated[list[dict], operator.add]
@@ -68,6 +73,9 @@ def initial_state(session_id: str, thread_id: str) -> HRWorkflowState:
         pre_screening_approval_status="pending",
         pre_screening_approval_feedback=None,
         email_scheduling_results=[],
+        onboarding_approval_status="pending",
+        onboarding_selected_ids=[],
+        onboarding_results=[],
         current_step="initialized",
         workflow_history=[],
         error=None,

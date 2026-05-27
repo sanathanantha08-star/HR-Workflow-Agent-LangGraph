@@ -14,17 +14,17 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
 
 1. **Orchestrator Agent** receives the trigger and coordinates the entire pipeline, routing work between specialised agents and surfacing decisions to the recruiter when human judgment is needed.
 
-2. **Resume Shortlister Agent** reads every resume, scores each candidate against the job description, and produces a ranked shortlist of 10–15 candidates with a match score and selection rationale for each. The shortlist is sent to the recruiter for approval (HITL gate).
+2. **Resume Shortlister Agent** reads every resume, scores each candidate against the job description, and produces a ranked shortlist with a match score and selection rationale for each. The shortlist is sent to the recruiter for approval (HITL Gate 1).
 
-3. **Pre-Screening Call Agent** — after the recruiter approves the shortlist — calls each shortlisted candidate over the phone using a live AI voice agent. It conducts a natural conversation and collects: job change intent, reason for change, current CTC, expected CTC, and availability for an interview slot. The collected data is sent back to the recruiter for approval (HITL gate).
+3. **Pre-Screening Call Agent** — after the recruiter approves the shortlist — calls each shortlisted candidate over the phone using a live AI voice agent. It conducts a natural conversation and collects: job change intent, reason for change, current CTC, expected CTC, and availability for an interview slot. The collected data is sent back to the recruiter for approval (HITL Gate 2).
 
 4. **Interview Scheduler Agent** takes the approved pre-screening results, checks the recruiter's Google Calendar for availability, finds the first free 1-hour block within the candidate's declared window, creates a Google Calendar event with a Google Meet link, and sends professional confirmation emails to both the candidate and the recruiter.
 
-5. **Background Verification Agent** *(planned)* initiates and tracks BGV checks once the interview stage is cleared.
+5. **Onboarding Agent** — after interviews are conducted — presents HR with a list of all interviewed candidates and lets them select who cleared the round. For every selected candidate, a personalised congratulations + onboarding email is sent automatically, welcoming them to the team and outlining next steps (offer letter, document collection, joining date confirmation). This stage has its own HITL Gate 3.
 
-6. **Onboarding Agent** *(planned)* handles all post-offer onboarding logistics — document collection, system access, induction scheduling, etc.
+6. **Background Verification Agent** *(backlog)* — will initiate and track BGV checks once the interview stage is cleared.
 
-> In the future this pipeline can be extended with offer management, multiple interview rounds, ATS integrations, custom screening questionnaires, and per-company workflow configuration. The architecture is built to support that from day one.
+> The architecture is built to be extended: offer management, document collection, multiple interview rounds, ATS integrations, and per-company workflow configuration are all on the roadmap.
 
 ---
 
@@ -33,7 +33,7 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
 ```
                         ┌─────────────────────────────────┐
                         │         RECRUITER / HR           │
-                        │  (uploads JD + resumes, reviews │
+                        │  (uploads JD + resumes, reviews  │
                         │   shortlists, approves results)  │
                         └────────────┬────────────────────┘
                                      │  trigger
@@ -57,31 +57,29 @@ A recruiter uploads a job description and a batch of resumes. From that moment, 
   │    DOCX resumes   │  │    (Edge TTS)    │  │  • Finds free 1-hr  │
   │  • Scores vs JD   │  │  • STT via       │  │    block in window  │
   │  • Ranks top 15   │  │    <Gather>      │  │  • Creates event +  │
-  │  • Cohere LLM     │  │  • Collects CTC, │  │    Google Meet link │
+  │  • Groq LLM       │  │  • Collects CTC, │  │    Google Meet link │
   └────────┬──────────┘  │    reason,       │  │  • Sends emails via │
            │             │    availability  │  │    Gmail API        │
-           ▼             └────────┬─────────┘  └─────────────────────┘
-  ┌─────────────────┐            │
-  │  HITL Gate 1    │            ▼
-  │  Recruiter      │   ┌─────────────────┐
-  │  approves /     │   │  HITL Gate 2    │
-  │  rejects        │   │  Recruiter      │
-  │  shortlist      │   │  approves /     │
-  └─────────────────┘   │  rejects call   │
-                        │  results        │
-                        └─────────────────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              ▼                  ▼                   ▼
-  ┌───────────────────┐  ┌──────────────┐  ┌──────────────────┐
-  │  Background       │  │  Onboarding  │  │  (Future)        │
-  │  Verification     │  │  Agent       │  │  Offer Mgmt,     │
-  │  Agent (planned)  │  │  (planned)   │  │  Multi-round     │
-  │                   │  │              │  │  interviews,     │
-  │  • BGV checks     │  │  • Documents │  │  ATS integration │
-  │  • Track status   │  │  • Access    │  └──────────────────┘
-  └───────────────────┘  │  • Induction │
-                         └──────────────┘
+           ▼             └────────┬─────────┘  └──────────┬──────────┘
+  ┌─────────────────┐            │                        │
+  │  HITL Gate 1    │            ▼                        ▼
+  │  Recruiter      │   ┌─────────────────┐     ┌─────────────────┐
+  │  approves /     │   │  HITL Gate 2    │     │  HITL Gate 3    │
+  │  rejects        │   │  Recruiter      │     │  HR selects     │
+  │  shortlist      │   │  approves /     │     │  cleared        │
+  └─────────────────┘   │  rejects call   │     │  candidates     │
+                        │  results        │     └────────┬────────┘
+                        └─────────────────┘              │
+                                                         ▼
+                                               ┌─────────────────────┐
+                                               │  Onboarding Agent   │
+                                               │                     │
+                                               │  • Sends congrats   │
+                                               │    + onboarding     │
+                                               │    email to each    │
+                                               │    selected         │
+                                               │    candidate        │
+                                               └─────────────────────┘
 ```
 
 ---
@@ -111,7 +109,7 @@ The screenshots below follow a real end-to-end run in sequence — from uploadin
 **7. Workflow Complete — all pipeline nodes green, run log ready to open**
 ![Workflow complete](public/images/7.png)
 
-**8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timelinee**
+**8. HTML Run Log — Overview tab with candidate summary, screening data, and workflow timeline**
 ![Run log overview tab](public/images/8.png)
 
 **9. HTML Run Log — Call Transcript tab showing the full AI-conducted conversation**
@@ -129,162 +127,129 @@ The screenshots below follow a real end-to-end run in sequence — from uploadin
 **13. Complete Run log**
 ![Complete run log](public/images/13.png)
 
-**14. HITL Gate 2 (Final Review) — Pre-screening results displayed with candidate's CTC, experience, reason for change, and declared interview slots. Recruiter clicks "Approve & Schedule Interviews" to trigger the scheduler.**
+**14. HITL Gate 2 (Final Review) — Pre-screening results displayed with candidate's CTC, experience, reason for change, and declared interview slots.**
 ![Final review HITL gate with pre-screening data](public/images/14.png)
 
-**15. Interview Scheduler Agent active — agent checks the recruiter's Google Calendar for available 1-hour slots within the candidate's declared window and queues confirmation emails.**
+**15. Interview Scheduler Agent active — agent checks the recruiter's Google Calendar for available 1-hour slots.**
 ![Interview scheduler agent running](public/images/15.png)
 
-**16. Workflow Complete — all pipeline nodes green. Interview scheduled for 1 candidate; confirmation emails dispatched to both candidate and recruiter.**
+**16. Workflow Complete — all pipeline nodes green. Interview scheduled and confirmation emails dispatched.**
 ![Full workflow complete with interview scheduled](public/images/16.png)
 
-**17. Candidate's inbox — professional Round 1 interview confirmation email sent from the HR agent account, showing date, time, duration, mode (Google Meet), and the live meeting link.**
+**17. Candidate's inbox — professional Round 1 interview confirmation email with date, time, duration, mode, and live meeting link.**
 ![Candidate interview confirmation email](public/images/17.png)
 
-**18. Candidate's inbox — Google Calendar invite received for the interview, with a "Join with Google Meet" button and the meeting link visible directly in the email.**
+**18. Candidate's inbox — Google Calendar invite received for the interview.**
 ![Recruiter Google Calendar invite email](public/images/18.png)
 
-**19. Recruiter's Google Calendar — 1-hour interview event ("Interview: SANATH ANANTHA DEVADIGA, 8–9am") created automatically on the correct date, with the Google Meet link attached.**
+**19. Recruiter's Google Calendar — 1-hour interview event created automatically with the Google Meet link attached.**
 ![Interview event on recruiter Google Calendar](public/images/19.png)
 
----
+**20.HR Selects the candidates who have positive Feedback and can be onboarded**
+![Interview event on recruiter Google Calendar](public/images/20.png)
 
-## What's Built and Working Today
-
-### ✅ Resume Shortlister Agent
-
-- Accepts a job description and up to 100 resumes (PDF or DOCX) via REST API
-- Extracts full text from each file using `pdfplumber` and `python-docx`
-- Sends all resumes + JD to Cohere (`command-r-plus-08-2024`) in a single LLM call
-- Returns a ranked shortlist with: candidate name, email, phone, current role, years of experience, skills, match score (out of 10), and a written selection rationale
-- Pauses at a HITL gate and waits for the recruiter to approve or reject the shortlist via API
-
-### ✅ Pre-Screening Call Agent
-
-- Dials each approved candidate using a Twilio outbound call
-- Runs a live AI voice conversation powered by Edge TTS (Microsoft Neural, free) for speech synthesis and Twilio `<Gather input="speech">` for real-time transcription
-- Collects all five pre-screening data points:
-  - Is the candidate looking for a change?
-  - Reason for change
-  - Current CTC
-  - Expected CTC
-  - Availability / preferred interview slot
-- Stores the full call transcript and extracted screening data in MongoDB
-- Pauses at a second HITL gate for recruiter review before the pipeline continues
-
-### ✅ Interview Scheduler Agent
-
-- Triggered automatically after the recruiter approves pre-screening results at HITL Gate 2
-- Parses each candidate's declared availability window (e.g., "Available on Wednesday, May 27 from 8 AM to 8 PM")
-- Scans the window in **1-hour blocks** (8–9 AM, 9–10 AM, …) and checks the recruiter's Google Calendar via the **Freebusy API** for each block
-- Books the **first free 1-hour slot** by creating a Google Calendar event on the recruiter's calendar
-- Attaches a **Google Meet conference link** to the event (`conferenceData` with `hangoutsMeet`, `conferenceDataVersion=1`)
-- Sends two professional confirmation emails via the **Gmail API**:
-  - **Candidate email** — subject "Round 1 Interview Scheduled", includes date, time, duration, mode, and the Google Meet link
-  - **Recruiter email** — interview summary with candidate details, slot, and Meet link
-- Both emails are sent from a dedicated no-reply HR agent account (`hragentdonotreply@gmail.com`)
-- All Google API access uses OAuth2 credentials (no service accounts needed); the token is refreshed automatically when expired
-
-### ✅ End-to-End Run Completed
-
-A real production run was completed end-to-end including interview scheduling:
-- Resume: `Sanath_Anantha_Resume_sde.pdf`
-- Candidate shortlisted with **9/10** match score
-- Live Twilio call placed to `+918951523420`
-- Full AI-conducted pre-screening conversation (5+ turns)
-- All screening data collected, recruiter approved at both HITL gates
-- Interview Scheduler found a free 1-hour slot (8–9 AM) on the recruiter's Google Calendar
-- Google Calendar event created with a live Google Meet link (`meet.google.com/...`)
-- Confirmation emails delivered to both candidate (`sanath.anantha08@gmail.com`) and recruiter (`sanath.anantha07@gmail.com`)
-- HTML run log generated with overview, full call transcript, and captured terminal logs
+**21.Onboarding Agent in Action**
+![Interview event on recruiter Google Calendar](public/images/21.png)
+**22.Onboarding Agent in Action**
+![Interview event on recruiter Google Calendar](public/images/22.png)
+**23.Onboarded candidates recieve the Welcome Mail**
+![Interview event on recruiter Google Calendar](public/images/23.png)
 
 ---
 
-## Changes Made on 23 May 2026
+## Changelog
 
-This section documents every change made to the system in today's session.
+### 27 May 2026 — Onboarding Agent & HITL Gate 3
 
-### 1. Interview Scheduler Agent — `agents/email_interview_scheduler.py` (new file)
+**New: Onboarding Agent** (`agents/onboarding_agent.py`)
 
-A brand-new agent was built from scratch to handle the interview scheduling stage. Previously this was listed as "planned"; it is now fully operational.
+After interviews are scheduled, a new HITL Gate 3 presents HR with a checkbox list of all interviewed candidates. HR selects who cleared the round and clicks "Send Onboarding Emails". The Onboarding Agent sends a personalised congratulations email to each selected candidate welcoming them to the team and outlining next steps (offer letter timeline, document checklist, joining date confirmation).
 
-**What it does:**
-- Receives the list of pre-screened candidates (with their declared availability windows) from the graph state after HITL Gate 2 approval.
-- For each candidate, it iterates through their availability window in **1-hour increments** using `check_slot_free()` to query the recruiter's Google Calendar.
-- The first 1-hour block where the recruiter is free is selected.
-- `create_calendar_event()` is called to create the event and generate a Google Meet link.
-- `send_interview_emails()` dispatches confirmation emails to both the candidate and the recruiter.
-- Logs every action (slot checked, slot busy, interview scheduled, emails sent) with structured JSON via `structlog`.
-
-**Why 1-hour blocks?**
-Previously the agent was booking the candidate's entire declared window (e.g., 8 AM–8 PM) as the interview duration, which was incorrect. The fix introduces a sliding 1-hour window scan so that the actual interview is exactly 1 hour and placed at the earliest free point in both parties' schedules.
-
----
-
-### 2. Google Calendar Integration — `tools/calendar_tools.py` (new file)
-
-Provides two functions used exclusively by the Interview Scheduler Agent:
-
-**`check_slot_free(start_dt, end_dt) → bool`**
-- Queries the recruiter's Google Calendar using the **Freebusy API** (`service.freebusy().query()`).
-- Returns `True` if the recruiter has no events overlapping the given 1-hour window, `False` otherwise.
-- Falls back to `True` (assume free) if Google credentials are not configured, so the system degrades gracefully in demo environments.
-
-**`create_calendar_event(candidate_name, candidate_email, start_dt, end_dt) → str`**
-- Creates a Google Calendar event on the recruiter's calendar (`calendarId = RECRUITER_CALENDAR_ID`).
-- Includes both the recruiter and the candidate as attendees so Google sends native calendar invitations to both.
-- Passes `conferenceData` with `conferenceSolutionKey: {type: "hangoutsMeet"}` and `conferenceDataVersion=1` to auto-generate a **Google Meet link**.
-- After creation, extracts the Meet join URI from `conferenceData.entryPoints` (looking for `entryPointType == "video"`) and returns it. Falls back to the calendar event HTML link if no Meet entry point is found.
-- All credentials are loaded from `google_token.json` (path set via `GOOGLE_TOKEN_PATH` in `.env`). The token is auto-refreshed using the stored `refresh_token` when it expires.
+- Added `OnboardingAgent` class in `agents/onboarding_agent.py`
+- Added `send_onboarding_email()` to `tools/email_tools.py` — casual, emoji-friendly congratulations email template
+- Added `hitl_onboarding_node` and `onboarding_node` to `graph/nodes.py`
+- Added `route_after_onboarding_hitl` edge to `graph/edges.py`
+- Wired `email_interview_scheduler → hitl_onboarding → onboarding → END` in `graph/workflow.py`; `hitl_onboarding` added to `interrupt_before`
+- Added `onboarding_approval_status`, `onboarding_selected_ids`, `onboarding_results` fields to `models/state.py`
+- Added `POST /api/hitl/{session_id}/onboarding` endpoint (`api/endpoints/hitl.py`) accepting `{ selected_candidate_ids: [...] }`
+- Added `OnboardingDecisionRequest` schema and updated `WorkflowStatusResponse` with onboarding fields (`models/schemas.py`)
+- Frontend: 8th pipeline node "Onboarding" (🎉, HITL type) added; dedicated `onboarding_active` view with its own pipeline state so the Onboarding node lights up during email sending (not Interview Scheduler)
+- Added `POST /api/debug/skip-to-onboarding` debug endpoint (`api/endpoints/debug.py`) — injects mock scheduling results and fast-forwards the graph to the onboarding gate for isolated testing
 
 ---
 
-### 3. Gmail API Integration — `tools/email_tools.py` (new file)
+### 26 May 2026 — Email Interview Scheduler Agent
 
-Handles sending confirmation emails via the **Gmail API** (OAuth2), replacing any SMTP/App Password approach. No separate email credentials are needed — the same `google_token.json` used for calendar access covers Gmail sending too (`gmail.send` scope).
+**New: Email Interview Scheduler Agent** (`agents/email_interview_scheduler.py`)
 
-**`send_interview_emails(candidate_name, candidate_email, start_dt, end_dt, calendar_link)`**
-- Builds two separate emails: one for the candidate, one for the recruiter.
-- Constructs raw MIME messages (`MIMEMultipart` + `MIMEText`) encoded as base64 and sends via `service.users().messages().send(userId="me", ...)`.
-- The `From` address is always `hragentdonotreply@gmail.com` (the dedicated HR agent account).
-
-**Professional email template (added today):**
-- Subject: `Round 1 Interview Scheduled` (candidate) / `Round 1 Interview Confirmed — {name} | {date}` (recruiter)
-- Body includes a formatted interview details block with `━` separators, showing: Date, Time, Duration (1 Hour), Mode (Online / Google Meet), and the Meet link.
-- Closes with: *"This is an automated email. Please do not reply to this message."* and *"Regards, Talent Acquisition Team"*.
-- If the Meet link is unavailable (e.g., calendar event creation failed), the link line reads: *"You will receive the meeting link shortly."*
+- Integrated the Email Agent into the pipeline as the 6th node
+- Agent reads pre-screening results, checks Google Calendar for free 1-hour slots, creates calendar events with Google Meet links, and sends confirmation emails
+- Updated frontend pipeline strip to show 7 nodes (added Interview Scheduler)
+- Added support for multiple workflow runs per session in the UI
 
 ---
 
-### 4. Dedicated HR Agent Email Account
+### 23 May 2026 — Interview Scheduler Agent, Google Calendar & Gmail Integration
 
-The agent email was changed from `sanath.anantha08@gmail.com` (a personal account) to **`hragentdonotreply@gmail.com`** — a dedicated account used solely for sending automated HR emails.
+**New: Interview Scheduler Agent** (`agents/email_interview_scheduler.py`)
 
-- `AGENT_EMAIL` constant in `email_tools.py` updated.
-- `setup_google_auth.py` instructions updated to prompt sign-in as the new account.
-- The OAuth token (`google_token.json`) must be regenerated by running `python setup_google_auth.py` and signing in as `hragentdonotreply@gmail.com`.
-- The recruiter's Google Calendar (`sanath.anantha07@gmail.com`) must share "Make changes to events" access with this new agent account.
+Built from scratch to handle the interview scheduling stage. Previously listed as "planned"; now fully operational.
+
+- Receives pre-screened candidates with declared availability windows from graph state after HITL Gate 2 approval
+- Iterates through availability windows in **1-hour increments** using `check_slot_free()` to query the recruiter's Google Calendar
+- Books the first free 1-hour block via `create_calendar_event()`, generating a Google Meet link automatically
+- Dispatches `send_interview_emails()` confirmation to both candidate and recruiter
+
+**New: Google Calendar Integration** (`tools/calendar_tools.py`)
+
+- `check_slot_free(start_dt, end_dt)` — queries recruiter's calendar via Freebusy API; falls back to `True` in demo environments without credentials
+- `create_calendar_event(...)` — creates event with both parties as attendees, auto-generates Google Meet link via `conferenceData` + `conferenceDataVersion=1`
+
+**New: Gmail API Integration** (`tools/email_tools.py`)
+
+- Replaced SMTP approach with Gmail API (OAuth2, `gmail.send` scope)
+- Same `google_token.json` covers both Calendar and Gmail — no credential sprawl
+- Professional email templates with formatted interview details block for candidate and recruiter
+
+**Other changes on this date:**
+- Dedicated HR agent email account set up (`hragentdonotreply@gmail.com`) — later changed to `sanath.anantha08@gmail.com`
+- Recruiter's Google Calendar configured to share "Make changes to events" access with agent account
+- Graph wired: `hitl_pre_screening → email_interview_scheduler → END`
+- `setup_google_auth.py` added for one-time OAuth2 token generation
 
 ---
 
-### 5. Google Calendar Access Setup
+### 22 May 2026 — Pre-Screening Call Agent
 
-The recruiter's Google Calendar (`.07`) was configured to delegate write access to the agent account so it can:
-- Query free/busy slots on the recruiter's calendar.
-- Create interview events directly on the recruiter's calendar (so it appears natively, not as an external invite that requires acceptance).
+**New: Pre-Screening Call Agent** (`agents/pre_screener.py`)
 
-**Required sharing level:** Settings → Sanath calendar → Share with specific people → `hragentdonotreply@gmail.com` → **"Make changes to events"**.
+- Dials each approved candidate via Twilio outbound call
+- AI voice conversation powered by Edge TTS (Microsoft Neural) for speech synthesis and Twilio `<Gather input="speech">` for real-time STT
+- Collects all five screening data points: job change intent, reason for change, current CTC, expected CTC, interview availability
+- Full call transcript and extracted screening data stored in MongoDB
+- HITL Gate 2 added for recruiter review
 
 ---
 
-### 6. Graph & Workflow Updated — `graph/workflow.py`, `graph/nodes.py`, `graph/edges.py`
+### 21 May 2026 — Resume Shortlister Agent & Initial Pipeline
 
-The LangGraph `StateGraph` was extended to wire in the new Interview Scheduler Agent:
+**Initial build: Core pipeline**
 
-- A new node `node_email_interview_scheduler` was added that calls `email_interview_scheduler_agent.arun(...)`.
-- The routing edge after HITL Gate 2 (`pre_screening_hitl`) now routes to `node_email_interview_scheduler` on approval instead of terminating.
-- On completion, the graph transitions to a final `emails_sent` step and marks the workflow complete.
-- The frontend pipeline UI now shows a 7th node: **"Interview Scheduler"**, which lights up green after emails are sent.
+- `Resume Shortlister Agent` — parses PDF/DOCX resumes, scores against JD via Groq LLM, returns ranked shortlist with match scores and rationale
+- LangGraph `StateGraph` with `interrupt_before` HITL gates
+- FastAPI backend, MongoDB storage, Pydantic schemas
+- HITL Gate 1 — recruiter approves or rejects shortlist with optional feedback (triggers re-run on rejection)
+- Single-page frontend with pipeline strip visualization
+
+---
+
+## Backlog
+
+| ID | Title | Type | Priority | Status | Description |
+|----|-------|------|----------|--------|-------------|
+| BL-001 | Production-Ready Voice Agent | Enhancement | High | Planned | Current implementation uses Edge TTS + Twilio `<Gather>`, which buffers the entire audio response before playing — causing 3–5s latency per turn and making calls feel unnatural. Replace with a production-grade voice platform (Vapi, Bolna, or similar) that: streams TTS chunks as they are generated rather than waiting for the full response; handles interruptions and barge-in; natively detects silence and disfluencies (ah, uhm, err) without custom logic; provides call analytics and transcription out of the box. Bolna is preferred for India deployments (Plivo backend, avoids TRAI DND blocks on US numbers). |
+| BL-002 | Background Verification (BGV) Agent | New Feature | Medium | Planned | Add a BGV Agent node after the onboarding stage. The agent should initiate BGV checks with a third-party provider (e.g., SpringVerify, AuthBridge) for each onboarded candidate, poll for status updates, and surface results to HR via a new HITL gate. Should cover identity, education, and employment history checks at minimum. |
+| BL-003 | Document Collection & Onboarding Formalities Agent | New Feature | Medium | Planned | Extend the Onboarding Agent scope with a dedicated Document Agent that handles post-offer paperwork: sends a document checklist to the candidate (ID proof, educational certificates, previous employment letters, etc.), tracks submission status, and notifies HR when all documents are received. Ideally implemented as an extension of the existing Onboarding Agent with additional state fields and a document-tracking HITL gate. Ties in with BL-002 for BGV document reuse. |
 
 ---
 
@@ -293,7 +258,7 @@ The LangGraph `StateGraph` was extended to wire in the new Interview Scheduler A
 | Layer | Technology |
 |---|---|
 | Agent orchestration | LangGraph `StateGraph` with `interrupt_before` HITL gates |
-| LLM | Cohere `command-r-plus-08-2024` via `langchain-cohere` |
+| LLM | Groq (`llama-3.3-70b-versatile`) via `langchain-groq` |
 | Voice calls | Twilio outbound calls + `<Gather input="speech">` for STT |
 | Text-to-speech | Edge TTS (Microsoft Neural, free) — served as MP3 from FastAPI `/static` |
 | Calendar integration | Google Calendar API v3 (Freebusy + Events insert with Google Meet) |
@@ -306,7 +271,7 @@ The LangGraph `StateGraph` was extended to wire in the new Interview Scheduler A
 | Observability | Latency + token tracking (`tokens_in`, `tokens_out`) on every LLM call |
 | Retries | `tenacity` exponential backoff on all external calls |
 | Validation | Pydantic v2 settings + request/response schemas |
-| Webhook tunneling | `ngrok` for local Twilio webhook delivery |
+| Webhook tunneling | Cloudflare Tunnel for local Twilio webhook delivery |
 
 ---
 
@@ -314,45 +279,49 @@ The LangGraph `StateGraph` was extended to wire in the new Interview Scheduler A
 
 ```
 agentic-hr/
-├── main.py                          # FastAPI app entry point
-├── config/settings.py               # Pydantic settings (reads from .env)
+├── main.py                              # FastAPI app entry point
+├── config/settings.py                   # Pydantic settings (reads from .env)
 ├── core/
-│   ├── logging.py                   # structlog setup + per-session file log sink
-│   ├── observability.py             # @observe_agent, @observe_tool decorators
-│   └── exceptions.py                # Custom exceptions + FastAPI error handlers
-├── db/mongodb.py                    # All MongoDB operations (async / motor)
+│   ├── logging.py                       # structlog setup + per-session file log sink
+│   ├── observability.py                 # @observe_agent, @observe_tool decorators
+│   └── exceptions.py                    # Custom exceptions + FastAPI error handlers
+├── db/mongodb.py                        # All MongoDB operations (async / motor)
 ├── models/
-│   ├── state.py                     # LangGraph HRWorkflowState TypedDict
-│   └── schemas.py                   # Pydantic request/response schemas
+│   ├── state.py                         # LangGraph HRWorkflowState TypedDict
+│   └── schemas.py                       # Pydantic request/response schemas
 ├── tools/
-│   ├── base.py                      # @tool_call, @with_retry decorators
-│   ├── file_tools.py                # PDF/DOCX text extraction
-│   ├── llm_tools.py                 # Cohere LLM wrappers
-│   ├── call_tools.py                # Twilio outbound call initiator
-│   ├── calendar_tools.py            # Google Calendar freebusy + event creation (NEW)
-│   └── email_tools.py               # Gmail API email sender (NEW)
+│   ├── base.py                          # @tool_call, @with_retry decorators
+│   ├── file_tools.py                    # PDF/DOCX text extraction
+│   ├── llm_tools.py                     # Groq LLM wrappers
+│   ├── call_tools.py                    # Twilio outbound call initiator
+│   ├── calendar_tools.py                # Google Calendar freebusy + event creation
+│   └── email_tools.py                   # Gmail API — interview + onboarding emails
 ├── agents/
-│   ├── resume_shortlister.py        # Resume parsing + LLM ranking node
-│   ├── pre_screener.py              # Call orchestration + result polling node
-│   └── email_interview_scheduler.py # Interview slot finder + email dispatcher (NEW)
+│   ├── base.py                          # BaseAgent with arun() + metric logging
+│   ├── resume_shortlister.py            # Resume parsing + LLM ranking node
+│   ├── pre_screener.py                  # Call orchestration + result polling node
+│   ├── email_interview_scheduler.py     # Interview slot finder + email dispatcher
+│   └── onboarding_agent.py              # Congratulations email sender (HITL Gate 3)
 ├── graph/
-│   ├── workflow.py                  # StateGraph definition + compilation
-│   └── edges.py                     # Conditional routing after HITL gates
-├── hitl/gates.py                    # HITL decision handlers (approve / reject)
+│   ├── workflow.py                      # StateGraph definition + compilation
+│   ├── nodes.py                         # All LangGraph node functions
+│   └── edges.py                         # Conditional routing after HITL gates
+├── hitl/gates.py                        # HITL decision handlers (approve / reject / onboard)
 ├── voice/
-│   ├── conversation.py              # TwiML state machine for live calls
-│   └── tts.py                       # Edge TTS audio generation
-├── api/endpoints/
-│   ├── workflow.py                  # /workflow/* REST endpoints
-│   ├── hitl.py                      # /hitl/* REST endpoints
-│   └── webhooks.py                  # /webhooks/twilio/* Twilio callbacks
-├── setup_google_auth.py             # One-time OAuth2 setup for Google APIs (NEW)
-├── google_credentials.json          # OAuth client ID + secret from Google Cloud Console
-├── google_token.json                # OAuth access + refresh token (generated by setup script)
-├── generate_report.py               # HTML run log generator (3-tab report)
-├── test_call.py                     # Standalone Twilio call tester
-├── test_flow.sh                     # End-to-end bash test script
-├── .env.example                     # Environment variable template
+│   ├── conversation.py                  # TwiML state machine for live calls
+│   └── tts.py                           # Edge TTS audio generation
+├── api/
+│   ├── router.py                        # API router registration
+│   └── endpoints/
+│       ├── workflow.py                  # /workflow/* REST endpoints
+│       ├── hitl.py                      # /hitl/* REST endpoints (shortlist, pre-screening, onboarding)
+│       ├── webhooks.py                  # /webhooks/twilio/* Twilio callbacks
+│       └── debug.py                     # /debug/* dev-only endpoints (skip-to-onboarding)
+├── setup_google_auth.py                 # One-time OAuth2 setup for Google APIs
+├── google_credentials.json              # OAuth client ID + secret from Google Cloud Console
+├── google_token.json                    # OAuth access + refresh token (generated by setup script)
+├── generate_report.py                   # HTML run log generator (3-tab report)
+├── .env.example                         # Environment variable template
 └── requirements.txt
 ```
 
@@ -376,7 +345,7 @@ cp .env.example .env
 ```
 
 You need:
-- **Cohere API key** — free at [cohere.com](https://cohere.com)
+- **Groq API key** — free at [console.groq.com](https://console.groq.com)
 - **Twilio account** — free trial at [twilio.com](https://twilio.com) (verify your phone number in trial mode)
 - **MongoDB** — local (`mongodb://localhost:27017`) or Atlas
 - **Google Cloud project** — with Gmail API and Google Calendar API enabled; OAuth client ID downloaded as `google_credentials.json`
@@ -384,24 +353,24 @@ You need:
 ### 3. Set up Google OAuth (one-time)
 
 ```bash
-# Run this once, sign in as hragentdonotreply@gmail.com when the browser opens
+# Run this once, sign in as sanath.anantha08@gmail.com when the browser opens
 python setup_google_auth.py
 ```
 
 This generates `google_token.json`. Set `GOOGLE_TOKEN_PATH=./google_token.json` in `.env`.
 
-The recruiter's calendar must share **"Make changes to events"** access with `hragentdonotreply@gmail.com` via Google Calendar Settings.
+The recruiter's calendar must share **"Make changes to events"** access with `sanath.anantha08@gmail.com` via Google Calendar Settings.
 
-### 4. Start ngrok
+### 4. Start Cloudflare Tunnel
 
 ```bash
-ngrok http 8000
+cloudflared tunnel --url http://localhost:8000
 # Paste the https URL into .env as PUBLIC_BASE_URL
 ```
 
 Set your Twilio phone number's Voice webhook URL to:
 ```
-https://<your-ngrok-url>/api/webhooks/twilio/voice
+https://<your-tunnel-url>/api/webhooks/twilio/voice
 ```
 
 ### 5. Run the server
@@ -414,13 +383,9 @@ python main.py
 
 ## Running the Workflow
 
-### Option A — bash script (recommended)
+### Option A — Web UI (recommended)
 
-```bash
-bash test_flow.sh /path/to/resume.pdf
-```
-
-Walks through the full flow interactively: upload → shortlist review → HITL approve → call → HITL approve → schedule interview → complete.
+Open `http://localhost:8000`, upload JD + resumes, and follow the pipeline visually. Use the **"🛠 Debug: Skip to Onboarding"** button on the upload screen to test the onboarding flow in isolation without running calls or the email scheduler.
 
 ### Option B — curl
 
@@ -430,21 +395,20 @@ curl -X POST http://localhost:8000/api/workflow/start \
   -F "jd_file=@job_description.txt" \
   -F "resume_files=@resume.pdf"
 
-# 2. Check shortlist
-curl http://localhost:8000/api/workflow/<session_id>/shortlist
-
-# 3. Approve shortlist
+# 2. Approve shortlist
 curl -X POST http://localhost:8000/api/hitl/<session_id>/shortlist \
   -H "Content-Type: application/json" \
   -d '{"decision": "approved", "feedback": "Looks good"}'
 
-# 4. Check pre-screening results
-curl http://localhost:8000/api/workflow/<session_id>/pre-screening
-
-# 5. Approve pre-screening (triggers interview scheduling automatically)
+# 3. Approve pre-screening (triggers interview scheduling automatically)
 curl -X POST http://localhost:8000/api/hitl/<session_id>/pre-screening \
   -H "Content-Type: application/json" \
   -d '{"decision": "approved", "feedback": "Ready for interview"}'
+
+# 4. Submit onboarding selection
+curl -X POST http://localhost:8000/api/hitl/<session_id>/onboarding \
+  -H "Content-Type: application/json" \
+  -d '{"selected_candidate_ids": ["cand_001", "cand_002"]}'
 ```
 
 ### Generating the HTML Run Log
@@ -454,17 +418,14 @@ python generate_report.py <session_id>
 open run_log_<first8chars>.html
 ```
 
-The report has three tabs — **Overview** (candidate + screening summary), **Call Transcript** (full AI conversation), and **Terminal Logs** (every structlog JSON line captured during the run).
-
 ---
 
 ## Key Design Decisions
 
 - **LangGraph `interrupt_before`** — HITL gates pause graph execution cleanly without polling or timeouts. `MemorySaver` holds checkpoint state in memory while MongoDB holds business data persistently across restarts.
-- **Twilio + Edge TTS** — Twilio handles telephony (STT via `<Gather input="speech">`); Edge TTS generates the AI voice as MP3 served from FastAPI's `/static` endpoint, keeping voice costs at zero.
-- **1-hour block scanning** — Rather than booking the candidate's entire declared window, the scheduler slides a 1-hour window across the availability range and picks the first slot where the recruiter's calendar is free. This ensures interviews are always exactly 1 hour and don't block the recruiter's whole day.
-- **Google Meet via `conferenceData`** — Passing `conferenceData` with `conferenceSolutionKey: {type: "hangoutsMeet"}` and `conferenceDataVersion=1` to the Calendar Events insert API auto-generates a Meet link without requiring any additional API calls or Meet-specific credentials.
-- **Single OAuth token for calendar + email** — Both the Google Calendar API and Gmail API share the same `google_token.json`. The token is issued with `calendar` + `gmail.send` scopes in one OAuth flow, so there is no credential sprawl.
+- **Twilio + Edge TTS** — Twilio handles telephony (STT via `<Gather input="speech">`); Edge TTS generates the AI voice as MP3 served from FastAPI's `/static` endpoint, keeping voice costs at zero. See BL-001 for the planned upgrade to a production-grade streaming voice platform.
+- **1-hour block scanning** — Rather than booking the candidate's entire declared window, the scheduler slides a 1-hour window across the availability range and picks the first slot where the recruiter's calendar is free.
+- **Google Meet via `conferenceData`** — Passing `conferenceData` with `conferenceSolutionKey: {type: "hangoutsMeet"}` and `conferenceDataVersion=1` to the Calendar Events insert API auto-generates a Meet link without any additional API calls.
+- **Single OAuth token for calendar + email** — Both the Google Calendar API and Gmail API share the same `google_token.json` issued with `calendar` + `gmail.send` scopes in one OAuth flow.
 - **Async-first** — All I/O is async (motor for MongoDB, async FastAPI). Twilio's sync SDK and Google's sync client libraries are wrapped with `run_in_executor` to avoid blocking the event loop.
-- **TwiML XML escaping** — `&` between query params in TwiML `action` URLs must be escaped as `&amp;`; handled centrally by `_action_url()` in `voice/conversation.py`.
-- **Per-session log files** — Every structlog line emitted during a workflow run is written to `logs/<session_id>.jsonl` via a custom processor inserted before `JSONRenderer`. The HTML report reads this file directly, giving you the exact terminal output in the browser.
+- **Per-session log files** — Every structlog line emitted during a workflow run is written to `logs/<session_id>.jsonl` via a custom processor. The HTML report reads this file directly.

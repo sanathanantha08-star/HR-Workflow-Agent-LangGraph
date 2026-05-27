@@ -37,3 +37,13 @@ def route_after_pre_screening_hitl(state: HRWorkflowState) -> str:
     elif status == "rejected":
         return "pre_screening"
     return "hitl_pre_screening"
+
+
+def route_after_onboarding_hitl(state: HRWorkflowState) -> str:
+    """After onboarding HITL gate: approved → send emails, otherwise wait."""
+    status = state.get("onboarding_approval_status", "pending")
+    logger.info("route_onboarding_hitl", status=status, session_id=state.get("session_id"))
+
+    if status == "approved":
+        return "onboarding"
+    return "hitl_onboarding"

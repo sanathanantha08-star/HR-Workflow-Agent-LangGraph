@@ -102,6 +102,12 @@ class TwilioGatherResult(BaseModel):
     Confidence: Optional[str] = None
 
 
+# ── Onboarding ─────────────────────────────────────────────────────────────────
+
+class OnboardingDecisionRequest(BaseModel):
+    selected_candidate_ids: list[str]
+
+
 # ── Workflow status ────────────────────────────────────────────────────────────
 
 class WorkflowStatusResponse(BaseModel):
@@ -109,8 +115,10 @@ class WorkflowStatusResponse(BaseModel):
     current_step: str
     shortlist_approval_status: str
     pre_screening_approval_status: str
+    onboarding_approval_status: str = "pending"
     shortlisted_candidates: list[dict]
     pre_screening_results: list[dict]
     email_scheduling_results: list[dict] = []
+    onboarding_results: list[dict] = []
     workflow_history: list[dict]
     error: Optional[str] = None

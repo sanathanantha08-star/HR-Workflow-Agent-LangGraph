@@ -63,6 +63,18 @@ async def reject_pre_screening(session_id: str, feedback: str) -> None:
     )
 
 
+async def submit_onboarding(session_id: str, selected_candidate_ids: list[str]) -> None:
+    """Resume the graph with HR's onboarding candidate selection."""
+    await _resume_with_decision(
+        session_id=session_id,
+        state_update={
+            "onboarding_approval_status": "approved",
+            "onboarding_selected_ids": selected_candidate_ids,
+        },
+        gate_name="onboarding",
+    )
+
+
 async def _maybe_recover_pre_screening(session_id: str, state_update: dict) -> dict:
     """
     If the pre_screening node died before writing results, synthesize them from

@@ -8,8 +8,14 @@ from graph.nodes import (
     pre_screening_node,
     hitl_pre_screening_node,
     email_interview_scheduler_node,
+    hitl_onboarding_node,
+    onboarding_node,
 )
-from graph.edges import route_after_shortlist_hitl, route_after_pre_screening_hitl
+from graph.edges import (
+    route_after_shortlist_hitl,
+    route_after_pre_screening_hitl,
+    route_after_onboarding_hitl,
+)
 from core.logging import get_logger
 
 logger = get_logger("graph.workflow")
@@ -33,6 +39,8 @@ def build_graph():
     builder.add_node("pre_screening", pre_screening_node)
     builder.add_node("hitl_pre_screening", hitl_pre_screening_node)
     builder.add_node("email_interview_scheduler", email_interview_scheduler_node)
+    builder.add_node("hitl_onboarding", hitl_onboarding_node)
+    builder.add_node("onboarding", onboarding_node)
 
     # Edges
     builder.add_edge(START, "parse_uploads")
@@ -61,12 +69,23 @@ def build_graph():
         },
     )
 
-    builder.add_edge("email_interview_scheduler", END)
+    builder.add_edge("email_interview_scheduler", "hitl_onboarding")
+
+    builder.add_conditional_edges(
+        "hitl_onboarding",
+        route_after_onboarding_hitl,
+        {
+            "onboarding": "onboarding",
+            "hitl_onboarding": "hitl_onboarding",
+        },
+    )
+
+    builder.add_edge("onboarding", END)
 
     # interrupt_before pauses execution before these nodes, allowing HITL
     _graph = builder.compile(
         checkpointer=checkpointer,
-        interrupt_before=["hitl_shortlist", "hitl_pre_screening"],
+        interrupt_before=["hitl_shortlist", "hitl_pre_screening", "hitl_onboarding"],
     )
     _checkpointer = checkpointer
     logger.info("graph_compiled")

@@ -1,9 +1,9 @@
 """
 Email sending via Gmail API (OAuth2) for interview scheduling confirmations.
-Sends from hragentdonotreply@gmail.com to both the candidate and recruiter.
+Sends from sanath.anantha08@gmail.com to both the candidate and recruiter.
 
 No App Password required — uses the same google_token.json as the calendar tool.
-The token must be authorized by hragentdonotreply@gmail.com with the gmail.send scope.
+The token must be authorized by sanath.anantha08@gmail.com with the gmail.send scope.
 """
 import base64
 import datetime
@@ -17,7 +17,7 @@ from core.logging import get_logger
 
 logger = get_logger("tools.email")
 
-AGENT_EMAIL     = "hragentdonotreply@gmail.com"
+AGENT_EMAIL     = "sanath.anantha08@gmail.com"
 RECRUITER_EMAIL = "sanath.anantha07@gmail.com"
 
 
@@ -168,3 +168,48 @@ Talent Acquisition Team""",
             success = False
 
     return success
+
+
+def send_onboarding_email(candidate_name: str, candidate_email: str) -> bool:
+    """Send a congratulations / onboarding email to a selected candidate."""
+    settings = get_settings()
+    if not settings.google_token_path:
+        logger.warning("google_token_not_configured_skipping_onboarding_email")
+        return False
+
+    subject = "🎉 You're In! Welcome to the Team!"
+    body = f"""\
+Hey {candidate_name}! 🎊
+
+We've got some AMAZING news for you — you've been selected! 🥳
+
+Out of everyone who applied, you stood out and absolutely crushed it through the process. We're so excited to have you joining us!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🚀 What Happens Next
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📄  Your official offer letter is on its way (within 2 business days)
+  📁  Start gathering your docs — ID proof, degree certificates, etc.
+  📞  Our HR team will reach out soon to lock in your joining date
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Once again, a huge congratulations! 🙌 This is just the beginning of something great, and we can't wait to have you on board.
+
+See you soon! 👋
+
+Cheers,
+The Talent Team ✨
+
+───────────────────────────────────────
+This is an automated message — please don't reply directly to this email."""
+
+    try:
+        service = _get_gmail_service()
+        raw_msg = _make_raw(candidate_email, subject, body)
+        service.users().messages().send(userId="me", body=raw_msg).execute()
+        logger.info("onboarding_email_sent", to=candidate_email, candidate=candidate_name)
+        return True
+    except Exception as exc:
+        logger.error("onboarding_email_failed", to=candidate_email, error=str(exc))
+        return False

@@ -9,6 +9,7 @@ from models.state import HRWorkflowState
 from agents.resume_shortlister import resume_shortlister_agent
 from agents.pre_screener import pre_screener_agent
 from agents.email_interview_scheduler import email_interview_scheduler_agent
+from agents.onboarding_agent import onboarding_agent
 from tools.storage_tools import save_session_state, save_shortlisted_candidates
 from core.logging import get_logger
 from core.observability import build_metric
@@ -237,5 +238,61 @@ async def hitl_pre_screening_node(state: HRWorkflowState) -> dict:
         "workflow_history": [
             _history_entry("hitl_pre_screening", summary, {"decision": status, "feedback": feedback})
         ],
+        "messages": [AIMessage(content=summary)],
+    }
+
+
+# ── Node: hitl_onboarding ──────────────────────────────────────────────────────
+
+async def hitl_onboarding_node(state: HRWorkflowState) -> dict:
+    """Read the recruiter's onboarding selection (set via API before resume)."""
+    status = state.get("onboarding_approval_status", "pending")
+    selected = state.get("onboarding_selected_ids", [])
+    logger.info("node_hitl_onboarding", status=status, selected_count=len(selected), session_id=state["session_id"])
+
+    summary = f"Onboarding HITL gate: status = {status}, selected = {len(selected)} candidates"
+    return {
+        "current_step": f"onboarding_{status}",
+        "workflow_history": [
+            _history_entry("hitl_onboarding", summary, {"status": status, "selected_count": len(selected)})
+        ],
+        "messages": [AIMessage(content=summary)],
+    }
+
+
+# ── Node: onboarding ───────────────────────────────────────────────────────────
+
+async def onboarding_node(state: HRWorkflowState) -> dict:
+    """Send onboarding emails to candidates selected by HR."""
+    logger.info("node_onboarding", session_id=state["session_id"])
+    start = time.perf_counter()
+
+    selected_ids = set(state.get("onboarding_selected_ids", []))
+    scheduling_results = state.get("email_scheduling_results", [])
+
+    selected_candidates = [
+        r for r in scheduling_results
+        if r.get("candidate_id") in selected_ids
+    ]
+
+    result = await onboarding_agent.arun(
+        session_id=state["session_id"],
+        selected_candidates=selected_candidates,
+    )
+
+    latency_ms = (time.perf_counter() - start) * 1000
+    onboarding_results = result["onboarding_results"]
+    sent_count = sum(1 for r in onboarding_results if r["status"] == "sent")
+    summary = f"Onboarding emails sent to {sent_count}/{len(onboarding_results)} selected candidates"
+
+    logger.info("onboarding_node_complete", session_id=state["session_id"], sent=sent_count)
+
+    return {
+        "onboarding_results": onboarding_results,
+        "current_step": "onboarding_complete",
+        "workflow_history": [
+            _history_entry("onboarding", summary, {"sent_count": sent_count, "total": len(onboarding_results)})
+        ],
+        "agent_metrics": [_agent_metric("onboarding", latency_ms)],
         "messages": [AIMessage(content=summary)],
     }

@@ -1,7 +1,7 @@
 """
 One-time Google OAuth2 setup script.
 Run: venv/bin/python setup_google_auth.py
-Sign in as hragentdonotreply@gmail.com when the browser opens.
+Sign in as sanath.anantha08@gmail.com when the browser opens.
 """
 import json
 import os
@@ -34,7 +34,7 @@ def main():
         sys.exit(1)
 
     print("Opening browser for authorization...")
-    print("Sign in as hragentdonotreply@gmail.com and click Allow.\n")
+    print("Sign in as sanath.anantha08@gmail.com and click Allow.\n")
 
     try:
         flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
