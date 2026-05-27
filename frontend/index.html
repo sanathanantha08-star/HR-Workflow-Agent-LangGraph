@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agentic HR</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:          #07080c;
+  --surface:     #0e0f14;
+  --card:        #13141a;
+  --card2:       #1a1b24;
+  --border:      #1e2030;
+  --border2:     #252638;
+  --text:        #e8eaf0;
+  --muted:       #5a5f7a;
+  --muted2:      #8890b0;
+  --accent:      #6366f1;
+  --accent-dim:  #6366f118;
+  --accent-glow: #6366f140;
+  --green:       #22c55e;
+  --green-bg:    #0a1f12;
+  --green-glow:  #22c55e35;
+  --red:         #ef4444;
+  --red-bg:      #1a0808;
+  --yellow:      #f59e0b;
+  --blue:        #60a5fa;
+  --orange:      #f97316;
+  --purple:      #a855f7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Dot grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: radial-gradient(circle, #ffffff06 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* ── Header ── */
+header {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 56px;
+  background: #07080ccc;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 700; letter-spacing: -.2px; color: var(--text);
+  text-decoration: none;
+}
+.logo-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.header-right { display: flex; align-items: center; gap: 10px; }
+.session-chip {
+  display: none; align-items: center; gap: 6px;
+  font-size: 11px; font-family: monospace; color: var(--muted2);
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+}
+.session-chip::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+}
+.ghost-btn {
+  font-size: 12px; font-weight: 500; padding: 5px 12px;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted2); cursor: pointer;
+  transition: all .15s; display: none;
+}
+.ghost-btn:hover { border-color: var(--border2); color: var(--text); }
+
+/* ── App shell ── */
+#app {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  min-height: calc(100vh - 56px);
+}
+
+/* ── Pipeline strip ── */
+.pipeline-strip {
+  display: none;
+  justify-content: center;
+  padding: 28px 40px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.pipeline-strip::-webkit-scrollbar { height: 4px; }
+.pipeline-strip::-webkit-scrollbar-track { background: transparent; }
+.pipeline-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.pipeline-row {
+  display: flex; align-items: center;
+  min-width: max-content; gap: 0;
+  padding-bottom: 4px;
+}
+
+/* Node */
+.p-node { display: flex; align-items: center; flex-direction: column; }
+
+.node-shell {
+  position: relative;
+  width: 148px;
+  transition: all .3s;
+}
+
+.node-card {
+  width: 148px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 14px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: all .3s;
+  position: relative; overflow: hidden;
+  cursor: default;
+}
+
+/* Shimmer line at top of card */
+.node-card::after {
+  content: '';
+  position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background .3s;
+}
+
+.node-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  transition: all .3s;
+}
+.ni-trigger { background: #1f1208; border: 1px solid #f9731628; }
+.ni-agent   { background: #11113a; border: 1px solid #6366f128; }
+.ni-hitl    { background: #1a1606; border: 1px solid #f59e0b28; }
+.ni-done    { background: var(--green-bg); border: 1px solid #22c55e28; }
+
+.node-label { font-size: 12px; font-weight: 600; color: var(--muted2); text-align: center; line-height: 1.3; }
+.node-type  { font-size: 10px; color: var(--muted); text-align: center; font-weight: 500; letter-spacing: .02em; }
+
+/* Status badge on node */
+.node-badge {
+  position: absolute; top: 9px; right: 9px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border2);
+  transition: all .3s;
+}
+
+/* — pending — */
+.p-node.st-pending .node-card { opacity: .4; }
+
+/* — active — */
+.p-node.st-active .node-card {
+  border-color: var(--accent);
+  background: #0e0e1f;
+  box-shadow: 0 0 0 1px var(--accent-glow), 0 0 30px var(--accent-dim);
+}
+.p-node.st-active .node-card::after { background: var(--accent); opacity: .7; }
+.p-node.st-active .node-badge {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: badge-pulse 1.4s ease-in-out infinite;
+}
+.p-node.st-active .node-label { color: var(--text); }
+.p-node.st-active .ni-agent { background: #1a1a4a; border-color: #6366f148; }
+.p-node.st-active .ni-hitl  { background: #241f08; border-color: #f59e0b48; }
+.p-node.st-active .ni-trigger { background: #281a08; border-color: #f9731648; }
+
+/* — done — */
+.p-node.st-done .node-card {
+  border-color: #1a4028;
+  background: #0b1610;
+  cursor: pointer;
+}
+.p-node.st-done .node-card:hover {
+  border-color: #22c55e66;
+  box-shadow: 0 0 20px var(--green-glow);
+}
+.p-node.st-done .node-card::after { background: var(--green); opacity: .6; }
+.p-node.st-done .node-badge { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.p-node.st-done .node-label { color: #86efac; }
+.p-node.st-done .node-type  { color: var(--green); }
+
+/* Pulse ring behind active node */
+.node-pulse {
+  display: none;
+  position: absolute; inset: -5px; border-radius: 18px;
+  border: 1.5px solid var(--accent); opacity: 0;
+  animation: node-ring 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.p-node.st-active .node-pulse { display: block; }
+
+@keyframes node-ring {
+  0%,100% { opacity: 0; transform: scale(1); }
+  50%      { opacity: .35; transform: scale(1.04); }
+}
+@keyframes badge-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+/* ── Connector ── */
+.connector {
+  display: flex; align-items: center;
+  width: 44px; flex-shrink: 0;
+  position: relative;
+}
+.conn-svg { width: 44px; height: 24px; overflow: visible; }
+.conn-line {
+  stroke: var(--border2); stroke-width: 1.5; fill: none;
+  stroke-dasharray: 4 3;
+  transition: stroke .4s;
+}
+.conn-line.fl-active {
+  stroke: var(--accent);
+  stroke-dasharray: 5 3;
+  animation: flow .7s linear infinite;
+}
+.conn-line.fl-done {
+  stroke: #1a5c30;
+  stroke-dasharray: none;
+}
+.conn-arrow {
+  transition: fill .4s;
+  fill: var(--border2);
+}
+.fl-active .conn-arrow { fill: var(--accent); }
+.fl-done   .conn-arrow { fill: #1a5c30; }
+
+@keyframes flow { to { stroke-dashoffset: -22; } }
+
+/* ── Content area ── */
+.content-area {
+  flex: 1; padding: 32px 40px 48px;
+  max-width: 920px; width: 100%; margin: 0 auto;
+}
+
+/* ── Upload screen ── */
+.upload-hero {
+  text-align: center; padding: 48px 0 36px;
+}
+.upload-hero h1 {
+  font-size: 32px; font-weight: 800; letter-spacing: -.6px; margin-bottom: 10px;
+  background: linear-gradient(135deg, #e8eaf0 0%, #8890b0 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.upload-hero p { color: var(--muted2); font-size: 15px; line-height: 1.6; }
+
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.upload-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+
+.dropzone {
+  border: 1.5px dashed var(--border2); border-radius: 12px;
+  padding: 28px 20px; text-align: center; cursor: pointer;
+  transition: all .2s; position: relative; background: var(--surface);
+  min-height: 120px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--accent); background: var(--accent-dim);
+}
+.dropzone.filled { border-color: var(--green); border-style: solid; background: #0a1f1288; }
+.dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.dz-icon  { font-size: 28px; }
+.dz-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.dz-hint  { font-size: 11px; color: var(--muted); }
+
+.file-chips { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.file-chip {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 10px; font-size: 12px;
+}
+.fc-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-size { color: var(--muted); flex-shrink: 0; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; font-family: inherit; transition: all .18s;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: var(--accent); color: #fff; width: 100%;
+  font-size: 15px; padding: 14px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:hover:not(:disabled) {
+  background: #7476f5;
+  box-shadow: 0 4px 28px #6366f155;
+}
+
+.btn-approve {
+  background: var(--green-bg); color: var(--green);
+  border: 1px solid #1a5c30;
+  box-shadow: 0 0 16px #22c55e10;
+}
+.btn-approve:hover { background: #0d2a19; box-shadow: 0 0 20px #22c55e20; }
+
+.btn-reject {
+  background: var(--red-bg); color: var(--red);
+  border: 1px solid #5c1a1a;
+}
+.btn-reject:hover { background: #220a0a; }
+
+.btn-outline {
+  background: var(--card); color: var(--muted2);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--border2); color: var(--text); }
+
+.btn-ghost {
+  background: transparent; color: var(--muted2);
+  border: 1px solid var(--border);
+  padding: 8px 16px; font-size: 13px;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Section head ── */
+.sec-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.sec-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.count-pill {
+  font-size: 12px; color: var(--muted2); background: var(--card);
+  border: 1px solid var(--border); border-radius: 99px; padding: 3px 12px;
+}
+
+/* ── Working / Agent active ── */
+.agent-stage {
+  background: var(--card); border: 1px solid var(--accent);
+  border-radius: 18px; padding: 56px 32px; text-align: center;
+  box-shadow: 0 0 60px var(--accent-dim);
+  position: relative; overflow: hidden;
+}
+.agent-stage::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.glow-ring {
+  width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 28px;
+  background: var(--accent-dim); border: 1.5px solid var(--accent);
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+  position: relative;
+  animation: glow-pulse 2.2s ease-in-out infinite;
+}
+.glow-ring::before {
+  content: ''; position: absolute; inset: -10px; border-radius: 50%;
+  border: 1.5px solid var(--accent); opacity: .25;
+  animation: glow-ring-outer 2.2s ease-in-out infinite;
+}
+.glow-ring::after {
+  content: ''; position: absolute; inset: -22px; border-radius: 50%;
+  border: 1px solid var(--accent); opacity: .1;
+  animation: glow-ring-outer 2.2s ease-in-out infinite .2s;
+}
+@keyframes glow-pulse      { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+@keyframes glow-ring-outer { 0%,100%{transform:scale(1);opacity:.25} 50%{transform:scale(1.2);opacity:.06} }
+
+.agent-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-dim); border-radius: 99px;
+  padding: 4px 12px; margin-bottom: 14px;
+}
+.agent-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: badge-pulse 1.4s ease-in-out infinite; }
+.agent-title { font-size: 24px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 10px; }
+.agent-desc  { font-size: 14px; color: var(--muted2); max-width: 420px; margin: 0 auto; line-height: 1.75; }
+
+/* ── Candidate card ── */
+.cand-grid { display: grid; gap: 10px; margin-bottom: 18px; }
+.cand-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+  transition: border-color .2s;
+}
+.cand-card:hover { border-color: var(--border2); }
+.cand-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.cand-name { font-size: 15px; font-weight: 700; }
+.cand-role { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+/* Circular score */
+.score-donut {
+  width: 50px; height: 50px; flex-shrink: 0; position: relative;
+}
+.score-donut svg { width: 50px; height: 50px; transform: rotate(-90deg); }
+.donut-bg   { fill: none; stroke: var(--border); stroke-width: 4; }
+.donut-fill { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dasharray .5s; }
+.score-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--green);
+}
+
+.cand-reason {
+  font-size: 13px; color: var(--muted2); line-height: 1.65;
+  padding: 10px 14px; background: var(--surface); border-radius: 8px;
+  margin-bottom: 12px; border-left: 3px solid var(--accent);
+}
+.cand-meta { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.cand-meta span { display: flex; align-items: center; gap: 4px; }
+.skills { display: flex; flex-wrap: wrap; gap: 5px; }
+.skill-pill {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  background: #11224088; border: 1px solid #1e3a5f55; color: #7db8f7;
+}
+
+/* ── Call card ── */
+.call-grid { display: grid; gap: 8px; margin-bottom: 18px; }
+.call-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 13px 16px;
+  display: flex; align-items: center; gap: 13px;
+}
+.call-av {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+}
+.call-info  { flex: 1; }
+.call-name  { font-size: 13px; font-weight: 600; }
+.call-phone { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.sbadge {
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+}
+.sb-calling   { background:#11224088; color:var(--blue);   border:1px solid #1e3a8a55; }
+.sb-completed { background:var(--green-bg); color:var(--green); border:1px solid #1a5c30; }
+.sb-failed    { background:var(--red-bg);   color:var(--red);   border:1px solid #5c1a1a; }
+.sb-noanswer  { background:#1a1306;  color:var(--yellow); border:1px solid #78350f55; }
+.sb-waiting   { background:var(--card); color:var(--muted); border:1px solid var(--border); }
+
+.spinner {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  border: 1.5px solid var(--blue); border-top-color: transparent;
+  animation: spin .55s linear infinite; vertical-align: middle; margin-right: 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Screening result ── */
+.res-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 10px;
+}
+.res-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.res-name { font-size: 15px; font-weight: 700; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.res-field {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px;
+}
+.rf-label { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; }
+.rf-val   { font-size: 13px; font-weight: 500; }
+.rf-yes   { color: var(--green); }
+.rf-no    { color: var(--red); }
+
+/* ── Action card ── */
+.action-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.action-row { display: flex; gap: 10px; }
+.action-row .btn { flex: 1; }
+.fb-box { margin-top: 12px; display: none; }
+.fb-box textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); padding: 11px 14px; font-size: 13px;
+  resize: vertical; min-height: 80px; outline: none; margin-bottom: 10px;
+  font-family: inherit; line-height: 1.6;
+}
+.fb-box textarea:focus { border-color: var(--accent); }
+.fb-box textarea::placeholder { color: var(--muted); }
+
+/* ── Rationale box ── */
+.rationale-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+}
+.rationale-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 7px; }
+.rationale-text  { font-size: 13px; color: var(--muted2); line-height: 1.7; }
+
+/* ── Complete screen ── */
+.complete-stage {
+  text-align: center; padding: 64px 32px;
+  background: var(--card); border: 1px solid #1a5c30;
+  border-radius: 18px; position: relative; overflow: hidden;
+  box-shadow: 0 0 60px #22c55e0d;
+}
+.complete-stage::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 50%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+.check-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--green-bg); border: 1.5px solid #1a5c30;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin: 0 auto 24px;
+  box-shadow: 0 0 40px var(--green-glow);
+}
+.complete-title { font-size: 28px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 8px; }
+.complete-sub   { font-size: 14px; color: var(--muted2); margin-bottom: 32px; line-height: 1.6; }
+.complete-btns  { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* ── Error screen ── */
+.error-stage {
+  text-align: center; padding: 56px 32px;
+  background: var(--card); border: 1px solid #5c1a1a;
+  border-radius: 18px; box-shadow: 0 0 40px #ef444410;
+}
+.error-icon  { font-size: 40px; margin-bottom: 16px; }
+.error-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+.error-msg   { font-size: 14px; color: var(--muted2); margin-bottom: 24px; line-height: 1.7; max-width: 480px; margin-left: auto; margin-right: auto; }
+
+/* ── Calling note ── */
+.call-note { text-align: center; padding: 16px; color: var(--muted); font-size: 13px; }
+.call-note strong { color: var(--blue); }
+
+/* ── Panel drawer ── */
+.overlay {
+  position: fixed; inset: 0; background: #00000090;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 200; display: none;
+}
+.overlay.open { display: block; }
+.drawer {
+  position: fixed; right: 0; top: 0; bottom: 0; width: 520px; max-width: 96vw;
+  background: #0e0f16; border-left: 1px solid var(--border);
+  z-index: 201; overflow-y: auto; padding: 26px;
+  animation: drawerIn .22s cubic-bezier(.4,0,.2,1);
+}
+@keyframes drawerIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;
+}
+.drawer-title { font-size: 15px; font-weight: 700; }
+.drawer-close {
+  background: var(--card); border: 1px solid var(--border); color: var(--muted2);
+  width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.drawer-close:hover { border-color: var(--border2); color: var(--text); }
+
+/* ── Onboarding candidate selector ── */
+.onb-grid { display: grid; gap: 8px; margin-bottom: 18px; }
+
+.onb-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  cursor: pointer; transition: all .18s; user-select: none;
+}
+.onb-card:hover { border-color: var(--border2); }
+.onb-card.selected {
+  border-color: var(--green);
+  background: #0b1610;
+  box-shadow: 0 0 0 1px #22c55e18;
+}
+
+.onb-checkbox-wrap {
+  flex-shrink: 0; width: 22px; height: 22px; position: relative;
+}
+.onb-checkbox-wrap input[type=checkbox] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0;
+  width: 100%; height: 100%;
+}
+.onb-check-box {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 1.5px solid var(--border2);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: transparent;
+  transition: all .15s;
+}
+.onb-card.selected .onb-check-box {
+  background: var(--green); border-color: var(--green); color: #fff;
+}
+
+.onb-info { flex: 1; min-width: 0; }
+.onb-name  { font-size: 14px; font-weight: 600; }
+.onb-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.onb-slot  { font-size: 12px; color: var(--muted2); margin-top: 4px; }
+
+.onb-badge { flex-shrink: 0; }
+
+/* ── Misc ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <div class="logo-mark">⚡</div>
+    Agentic HR
+  </a>
+  <div class="header-right">
+    <div class="session-chip" id="session-chip"></div>
+    <button class="ghost-btn" id="new-btn" onclick="newSession()">+ New Workflow</button>
+  </div>
+</header>
+
+<div id="app">
+  <!-- Pipeline strip (hidden on upload) -->
+  <div class="pipeline-strip" id="pipeline-strip">
+    <div class="pipeline-row" id="pipeline-row"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area" id="content"></div>
+</div>
+
+<!-- Drawer -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer" style="display:none">
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawer-title"></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drawer-body"></div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────
+const S = {
+  sessionId:          localStorage.getItem('hr_session_id') || null,
+  status:             null,
+  callDetails:        null,
+  timer:              null,
+  view:               'upload',
+  onboardingSubmitted: false,
+};
+
+// ─── Pipeline node definitions ────────────────────────────────────────────
+const NODES = [
+  { icon:'⬆',  label:'Upload',              sub:'Trigger',       cls:'ni-trigger', panelIdx: null },
+  { icon:'🤖',  label:'Resume Parser',       sub:'AI Agent',      cls:'ni-agent',   panelIdx: 0    },
+  { icon:'👤',  label:'Shortlist Review',    sub:'Human in Loop', cls:'ni-hitl',    panelIdx: 1    },
+  { icon:'📞',  label:'Pre-Screener',        sub:'AI Agent',      cls:'ni-agent',   panelIdx: 2    },
+  { icon:'✅',  label:'Final Review',        sub:'Human in Loop', cls:'ni-hitl',    panelIdx: 3    },
+  { icon:'📅',  label:'Interview Scheduler', sub:'AI Agent',      cls:'ni-agent',   panelIdx: 4    },
+  { icon:'🎉',  label:'Onboarding',          sub:'Human in Loop', cls:'ni-hitl',    panelIdx: 5    },
+  { icon:'🏁',  label:'Complete',            sub:'Workflow Done',  cls:'ni-agent',   panelIdx: null },
+];
+
+const TERMINAL = new Set(['completed','failed','no_answer','no-answer','busy','canceled']);
+
+// ─── Boot ─────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (S.sessionId) { showChip(S.sessionId); render('working'); startPolling(); }
+  else render('upload');
+});
+
+// ─── Polling ──────────────────────────────────────────────────────────────
+function startPolling() {
+  if (S.timer) clearInterval(S.timer);
+  poll();
+  S.timer = setInterval(poll, 3000);
+}
+function stopPolling() { clearInterval(S.timer); S.timer = null; }
+
+async function poll() {
+  if (!S.sessionId) return;
+  try {
+    const r = await fetch(`/api/workflow/${S.sessionId}/status`);
+    if (!r.ok) return;
+    S.status = await r.json();
+    const v = computeView();
+    if (v === 'calling' || v === 'screening') {
+      const cr = await fetch(`/api/workflow/${S.sessionId}/pre-screening`);
+      if (cr.ok) S.callDetails = await cr.json();
+    }
+    const nv = computeView();
+    const viewChanged = nv !== S.view;
+    if (viewChanged) { S.view = nv; if (nv === 'complete') stopPolling(); }
+    // Don't re-render onboarding content on each poll tick — it resets checkboxes.
+    // Just keep the pipeline strip in sync.
+    if (viewChanged || (S.view !== 'onboarding' && S.view !== 'onboarding_active')) {
+      render(S.view);
+    } else {
+      renderPipeline(S.view);
+    }
+  } catch (e) { console.error(e); }
+}
+
+// ─── View machine ─────────────────────────────────────────────────────────
+function allCallsDone() {
+  const d = S.callDetails?.call_details || [];
+  return d.length > 0 && d.every(c => TERMINAL.has(c.status));
+}
+function computeView() {
+  if (!S.status) return 'working';
+  const { shortlist_approval_status: sl, pre_screening_approval_status: ps,
+          onboarding_approval_status: oa,
+          shortlisted_candidates: cands = [], pre_screening_results: res = [],
+          email_scheduling_results: esr = [], current_step: step = '', error } = S.status;
+  if (error)                                                   return 'error';
+  if (sl === 'pending' && cands.length > 0)                    return 'shortlist';
+  if (step === 'onboarding_complete')                          return 'complete';
+  if (step === 'onboarding_approved')                          return 'onboarding_active';
+  if (step === 'emails_sent' || step === 'onboarding_pending') {
+    return S.onboardingSubmitted ? 'onboarding_active' : 'onboarding';
+  }
+  if (ps === 'approved')                                       return 'scheduling';
+  if (ps === 'pending' && res.length > 0)                      return 'screening';
+  if (sl === 'approved' && res.length === 0 && allCallsDone()) return 'screening';
+  if (sl === 'approved' && res.length === 0)                   return 'calling';
+  return 'working';
+}
+
+// ─── Pipeline state per view ──────────────────────────────────────────────
+function pipelineStates(view) {
+  const slApproved = S.status?.shortlist_approval_status === 'approved';
+  const map = {
+    upload:      ['st-active','st-pending','st-pending','st-pending','st-pending','st-pending','st-pending','st-pending'],
+    shortlist:   ['st-done',  'st-done',   'st-active', 'st-pending','st-pending','st-pending','st-pending','st-pending'],
+    calling:     ['st-done',  'st-done',   'st-done',   'st-active', 'st-pending','st-pending','st-pending','st-pending'],
+    screening:   ['st-done',  'st-done',   'st-done',   'st-done',   'st-active', 'st-pending','st-pending','st-pending'],
+    scheduling:  ['st-done',  'st-done',   'st-done',   'st-done',   'st-done',   'st-active', 'st-pending','st-pending'],
+    onboarding:        ['st-done','st-done','st-done','st-done','st-done','st-done','st-active','st-pending'],
+    onboarding_active: ['st-done','st-done','st-done','st-done','st-done','st-done','st-active','st-pending'],
+    complete:    ['st-done',  'st-done',   'st-done',   'st-done',   'st-done',   'st-done',   'st-done',   'st-done'],
+    error:       ['st-pending','st-pending','st-pending','st-pending','st-pending','st-pending','st-pending','st-pending'],
+  };
+  if (view === 'working') {
+    const psApproved = S.status?.pre_screening_approval_status === 'approved';
+    if (psApproved)
+      return ['st-done','st-done','st-done','st-done','st-done','st-active','st-pending','st-pending'];
+    if (slApproved)
+      return ['st-done','st-done','st-done','st-active','st-pending','st-pending','st-pending','st-pending'];
+    return ['st-done','st-active','st-pending','st-pending','st-pending','st-pending','st-pending','st-pending'];
+  }
+  return map[view] || map.error;
+}
+
+// ─── Render pipeline ──────────────────────────────────────────────────────
+function renderPipeline(view) {
+  const states = pipelineStates(view);
+  const el = document.getElementById('pipeline-row');
+  let html = '';
+  NODES.forEach((n, i) => {
+    const st = states[i];
+    const iconCls = st === 'st-done' ? 'ni-done' : n.cls;
+    const clickable = (st === 'st-done' && n.panelIdx !== null)
+      ? `onclick="openDrawer(${n.panelIdx})" title="View ${n.label} data"` : '';
+    const sublabel = st === 'st-active' ? '● Active' : st === 'st-done' ? '✓ Done' : n.sub;
+
+    html += `<div class="p-node ${st}">
+      <div class="node-shell">
+        <div class="node-pulse"></div>
+        <div class="node-card" ${clickable}>
+          <div class="node-badge"></div>
+          <div class="node-icon ${iconCls}">${n.icon}</div>
+          <div class="node-label">${n.label}</div>
+          <div class="node-type">${sublabel}</div>
+        </div>
+      </div>
+    </div>`;
+
+    if (i < NODES.length - 1) {
+      const leftDone  = st === 'st-done';
+      const rightSt   = states[i + 1];
+      const flowCls   = leftDone && rightSt === 'st-active' ? 'fl-active'
+                      : leftDone ? 'fl-done' : '';
+      const stroke    = flowCls === 'fl-done' ? '#1a5c30' : flowCls === 'fl-active' ? '#6366f1' : '#1e2030';
+      html += `<div class="connector">
+        <svg class="conn-svg" viewBox="0 0 44 8" preserveAspectRatio="none">
+          <line x1="0" y1="4" x2="38" y2="4" class="conn-line ${flowCls}"/>
+          <polyline points="34,1 40,4 34,7" fill="none" stroke="${stroke}" stroke-width="1.5" class="conn-arrow"/>
+        </svg>
+      </div>`;
+    }
+  });
+  el.innerHTML = html;
+}
+
+// ─── Master render ────────────────────────────────────────────────────────
+function render(view) {
+  const strip = document.getElementById('pipeline-strip');
+  strip.style.display = view === 'upload' ? 'none' : 'flex';
+  if (view !== 'upload') renderPipeline(view);
+
+  document.getElementById('new-btn').style.display = view !== 'upload' ? 'flex' : 'none';
+
+  const el = document.getElementById('content');
+  switch (view) {
+    case 'upload':     el.innerHTML = renderUpload();     break;
+    case 'working':    el.innerHTML = renderWorking();    break;
+    case 'shortlist':  el.innerHTML = renderShortlist();  break;
+    case 'calling':    el.innerHTML = renderCalling();    break;
+    case 'screening':  el.innerHTML = renderScreening();  break;
+    case 'scheduling':        el.innerHTML = renderScheduling();       break;
+    case 'onboarding':        el.innerHTML = renderOnboarding();       break;
+    case 'onboarding_active': el.innerHTML = renderOnboardingActive(); break;
+    case 'complete':   el.innerHTML = renderComplete();   break;
+    case 'error':      el.innerHTML = renderError();      break;
+  }
+  bindDropHandlers();
+}
+
+// ─── Upload ───────────────────────────────────────────────────────────────
+function renderUpload() {
+  return `
+  <div class="upload-hero">
+    <h1>Automate Your Recruitment</h1>
+    <p>Upload the job description and candidate resumes.<br>Multi-agent pipeline handles shortlisting, calling, and approvals.</p>
+  </div>
+  <div class="upload-grid">
+    <div>
+      <div class="upload-label">Job Description</div>
+      <div class="dropzone" id="jd-zone">
+        <input type="file" id="jd-input" accept=".pdf,.docx,.txt" onchange="onJdPick(this)"/>
+        <div class="dz-icon">📋</div>
+        <div class="dz-label">Drop JD or click to select</div>
+        <div class="dz-hint">.pdf · .docx · .txt</div>
+      </div>
+      <div id="jd-chips" class="file-chips"></div>
+    </div>
+    <div>
+      <div class="upload-label">Candidate Resumes <span style="font-weight:400;color:var(--muted)">(multiple)</span></div>
+      <div class="dropzone" id="resume-zone">
+        <input type="file" id="resume-input" accept=".pdf,.docx" multiple onchange="onResumePick(this)"/>
+        <div class="dz-icon">📁</div>
+        <div class="dz-label">Drop resumes or click to select</div>
+        <div class="dz-hint">.pdf · .docx · up to 100 files</div>
+      </div>
+      <div id="resume-chips" class="file-chips"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="start-btn" onclick="startWorkflow()" disabled>
+    Launch Workflow →
+  </button>
+  <!-- DEBUG BUTTON — commented out for production
+  <div style="text-align:center;margin-top:14px">
+    <button class="btn btn-ghost" style="font-size:12px;padding:6px 16px" onclick="debugSkipToOnboarding()">
+      🛠 Debug: Skip to Onboarding
+    </button>
+  </div>
+  -->`;
+}
+
+// ─── Working / agent active ───────────────────────────────────────────────
+function renderWorking() {
+  const info = agentInfo();
+  return `
+  <div class="agent-stage">
+    <div class="glow-ring">${info.icon}</div>
+    <div class="agent-pill"><div class="agent-pill-dot"></div>Agent Active</div>
+    <div class="agent-title">${info.name}</div>
+    <div class="agent-desc">${info.desc}</div>
+  </div>`;
+}
+
+function agentInfo() {
+  const step = S.status?.current_step || '';
+  const n = S.status?.resume_filenames?.length || '';
+  if (!step || step === 'initialized')
+    return { icon:'📄', name:'Resume Parser', desc:'Extracting and parsing all uploaded resume files…' };
+  if (step === 'parse_uploads')
+    return { icon:'🤖', name:'Shortlister Agent', desc:`Scoring ${n} resumes against the job description using Cohere LLM…` };
+  if (step === 'shortlist_resumes')
+    return { icon:'⏳', name:'Orchestrator', desc:'Shortlisting complete — waiting for recruiter review…' };
+  if (step === 'hitl_shortlist')
+    return { icon:'📞', name:'Pre-Screener Agent', desc:'Approved! Initiating outbound calls to shortlisted candidates…' };
+  if (step === 'pre_screening_approved')
+    return { icon:'📅', name:'Interview Scheduler', desc:'Pre-screening approved! Checking recruiter calendar and scheduling interviews…' };
+  if (step === 'onboarding_approved')
+    return { icon:'🎉', name:'Onboarding Agent', desc:'Sending congratulations emails to your selected candidates…' };
+  return { icon:'⚙️', name:'Processing', desc:'Please wait a moment…' };
+}
+
+// ─── Shortlist ────────────────────────────────────────────────────────────
+function renderShortlist() {
+  const cands = S.status?.shortlisted_candidates || [];
+  const rat   = S.status?.shortlisting_rationale || '';
+  const cards = cands.map(c => {
+    const r = 20, circ = 2 * Math.PI * r;
+    const fill = circ * (c.match_score / 10);
+    const gap  = circ - fill;
+    return `
+    <div class="cand-card">
+      <div class="cand-row">
+        <div>
+          <div class="cand-name">${esc(c.name)}</div>
+          <div class="cand-role">${esc(c.current_role || '—')}</div>
+        </div>
+        <div class="score-donut">
+          <svg viewBox="0 0 50 50">
+            <circle class="donut-bg" cx="25" cy="25" r="${r}"/>
+            <circle class="donut-fill" cx="25" cy="25" r="${r}"
+              stroke="#22c55e" stroke-dasharray="${fill} ${gap}"/>
+          </svg>
+          <div class="score-num">${c.match_score}</div>
+        </div>
+      </div>
+      <div class="cand-reason">${esc(c.selection_reason || '')}</div>
+      <div class="cand-meta">
+        <span>✉ ${esc(c.email || '—')}</span>
+        <span>📞 ${esc(c.phone || '—')}</span>
+      </div>
+      <div class="skills">${(c.skills||[]).slice(0,10).map(s=>`<span class="skill-pill">${esc(s)}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="sec-head">
+    <h2>Shortlisted Candidates</h2>
+    <span class="count-pill">${cands.length} candidates</span>
+  </div>
+  ${rat ? `<div class="rationale-box"><div class="rationale-label">AI Rationale</div><div class="rationale-text">${esc(rat)}</div></div>` : ''}
+  <div class="cand-grid">${cards}</div>
+  <div class="action-card">
+    <div class="action-row">
+      <button class="btn btn-approve" onclick="decide('shortlist','approved')">✓ Approve &amp; Start Calls</button>
+      <button class="btn btn-reject"  onclick="toggleFb('shortlist')">✕ Reject</button>
+    </div>
+    <div class="fb-box" id="fb-shortlist">
+      <textarea id="fb-shortlist-text" placeholder="Reason for rejection (required)…"></textarea>
+      <div class="action-row">
+        <button class="btn btn-reject"  onclick="decide('shortlist','rejected')">Confirm Rejection</button>
+        <button class="btn btn-outline" onclick="toggleFb('shortlist')">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Calling ──────────────────────────────────────────────────────────────
+function renderCalling() {
+  const cands   = S.status?.shortlisted_candidates || [];
+  const details = S.callDetails?.call_details || [];
+  const byCand  = {};
+  details.forEach(d => { byCand[d.candidate_id] = d; });
+
+  const cards = cands.map(c => {
+    const cd  = byCand[c.candidate_id] || {};
+    const { cls, label, prefix } = callBadge(cd.status || 'waiting');
+    return `
+    <div class="call-card">
+      <div class="call-av">👤</div>
+      <div class="call-info">
+        <div class="call-name">${esc(c.name)}</div>
+        <div class="call-phone">${esc(c.phone || '—')}</div>
+      </div>
+      <span class="sbadge ${cls}">${prefix}${label}</span>
+    </div>`;
+  }).join('');
+
+  const done = details.filter(d => TERMINAL.has(d.status)).length;
+  return `
+  <div class="sec-head">
+    <h2>Pre-Screening Calls</h2>
+    <span class="count-pill">${done} / ${cands.length} done</span>
+  </div>
+  <div class="call-grid">${cards || '<div class="call-note">Initiating calls… <strong>This may take a moment.</strong></div>'}</div>
+  <p class="call-note">The AI voice agent is calling each candidate. Results appear automatically once all calls complete.</p>`;
+}
+
+// ─── Screening results ────────────────────────────────────────────────────
+function screeningResults() {
+  if (S.status?.pre_screening_results?.length) return S.status.pre_screening_results;
+  const details = S.callDetails?.call_details || [];
+  const cm = {};
+  (S.status?.shortlisted_candidates || []).forEach(c => { cm[c.candidate_id] = c; });
+  return details.map(d => {
+    const sd = d.screening_data || {}, cand = cm[d.candidate_id] || {};
+    return { candidate_id: d.candidate_id, name: cand.name || '—',
+      phone: cand.phone || d.to_number || '—', email: cand.email || '—',
+      call_status: d.status, looking_for_change: sd.looking_for_change,
+      reason_for_change: sd.reason_for_change, current_ctc: sd.current_ctc,
+      expected_ctc: sd.expected_ctc, interview_slots: sd.interview_slots,
+      experience_years: sd.experience_years };
+  });
+}
+
+function renderScreening() {
+  const results = screeningResults();
+  const cards = results.map(r => {
+    const lfc = r.looking_for_change;
+    const lfcHtml = lfc === true  ? '<span class="rf-val rf-yes">Yes</span>'
+                  : lfc === false ? '<span class="rf-val rf-no">No</span>'
+                  : '<span class="rf-val">—</span>';
+    const { cls, label } = callBadge(r.call_status || 'completed');
+    return `
+    <div class="res-card">
+      <div class="res-head">
+        <div class="res-name">${esc(r.name)}</div>
+        <span class="sbadge ${cls}">${label}</span>
+      </div>
+      <div class="res-grid">
+        <div class="res-field"><div class="rf-label">Open to Change</div>${lfcHtml}</div>
+        <div class="res-field"><div class="rf-label">Experience</div><div class="rf-val">${esc(r.experience_years||'—')}</div></div>
+        <div class="res-field"><div class="rf-label">Current CTC</div><div class="rf-val">${esc(r.current_ctc||'—')}</div></div>
+        <div class="res-field"><div class="rf-label">Expected CTC</div><div class="rf-val">${esc(r.expected_ctc||'—')}</div></div>
+        <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Reason for Change</div><div class="rf-val">${esc(r.reason_for_change||'—')}</div></div>
+        <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Interview Slots</div><div class="rf-val">${(r.interview_slots||[]).map(s=>esc(s)).join('<br>') || '—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="sec-head">
+    <h2>Pre-Screening Results</h2>
+    <span class="count-pill">${results.length} candidates</span>
+  </div>
+  ${cards}
+  <div class="action-card">
+    <div class="action-row">
+      <button class="btn btn-approve" onclick="decide('screening','approved')">✓ Approve &amp; Schedule Interviews</button>
+      <button class="btn btn-reject"  onclick="toggleFb('screening')">✕ Reject</button>
+    </div>
+    <div class="fb-box" id="fb-screening">
+      <textarea id="fb-screening-text" placeholder="Reason for rejection (required)…"></textarea>
+      <div class="action-row">
+        <button class="btn btn-reject"  onclick="decide('screening','rejected')">Confirm Rejection</button>
+        <button class="btn btn-outline" onclick="toggleFb('screening')">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Scheduling ───────────────────────────────────────────────────────────
+function renderScheduling() {
+  return `
+  <div class="agent-stage">
+    <div class="glow-ring">📅</div>
+    <div class="agent-pill"><div class="agent-pill-dot"></div>Agent Active</div>
+    <div class="agent-title">Interview Scheduler Agent</div>
+    <div class="agent-desc">Checking recruiter's Google Calendar for available slots and sending interview confirmation emails to candidates and the recruiter…</div>
+  </div>`;
+}
+
+// ─── Onboarding active (sending emails) ──────────────────────────────────
+function renderOnboardingActive() {
+  return `
+  <div class="agent-stage">
+    <div class="glow-ring">🎉</div>
+    <div class="agent-pill"><div class="agent-pill-dot"></div>Agent Active</div>
+    <div class="agent-title">Onboarding Agent</div>
+    <div class="agent-desc">Sending congratulations emails to your selected candidates…</div>
+  </div>`;
+}
+
+// ─── Onboarding ───────────────────────────────────────────────────────────
+function renderOnboarding() {
+  const esr = S.status?.email_scheduling_results || [];
+
+  const cardHtml = (r) => {
+    return `
+    <label class="onb-card selected" id="onb-label-${esc(r.candidate_id)}" for="onb-${esc(r.candidate_id)}" onclick="toggleOnbCard('${esc(r.candidate_id)}')">
+      <div class="onb-checkbox-wrap">
+        <input type="checkbox" id="onb-${esc(r.candidate_id)}" value="${esc(r.candidate_id)}"
+          class="onb-checkbox" checked onclick="event.stopPropagation();" onchange="toggleOnbCard('${esc(r.candidate_id)}')"/>
+        <div class="onb-check-box">✓</div>
+      </div>
+      <div class="onb-info">
+        <div class="onb-name">${esc(r.name)}</div>
+        <div class="onb-email">✉ ${esc(r.email || '—')}</div>
+      </div>
+    </label>`;
+  };
+
+  const cards = esr.map(cardHtml).join('');
+
+  return `
+  <div class="sec-head">
+    <h2>Select Candidates to Onboard</h2>
+    <span class="count-pill">${esr.length} candidates</span>
+  </div>
+  <p style="color:var(--muted2);font-size:13px;margin-bottom:18px;line-height:1.6">
+    Select the candidates who cleared the interview round. Congratulations + onboarding emails will be sent to all selected candidates.
+  </p>
+  <div class="onb-grid" id="onb-grid">${cards}</div>
+  <div class="action-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span id="onb-sel-label" style="font-size:13px;color:var(--muted2)">${esr.length} of ${esr.length} selected</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="setAllOnb(true)">Select All</button>
+        <button class="btn btn-ghost" onclick="setAllOnb(false)">Deselect All</button>
+      </div>
+    </div>
+    <button class="btn btn-approve" style="width:100%;font-size:15px;padding:14px" onclick="decideOnboarding()">
+      ✉ Send Onboarding Emails to Selected
+    </button>
+  </div>`;
+}
+
+function toggleOnbCard(candidateId) {
+  const checkbox = document.getElementById(`onb-${candidateId}`);
+  const label    = document.getElementById(`onb-label-${candidateId}`);
+  if (!checkbox || !label) return;
+  checkbox.checked = !checkbox.checked;
+  label.classList.toggle('selected', checkbox.checked);
+  updateOnbSelLabel();
+}
+
+function setAllOnb(checked) {
+  document.querySelectorAll('.onb-checkbox').forEach(cb => {
+    cb.checked = checked;
+    const id = cb.value;
+    const lbl = document.getElementById(`onb-label-${id}`);
+    if (lbl) lbl.classList.toggle('selected', checked);
+  });
+  updateOnbSelLabel();
+}
+
+function updateOnbSelLabel() {
+  const total = document.querySelectorAll('.onb-checkbox').length;
+  const sel   = document.querySelectorAll('.onb-checkbox:checked').length;
+  const el = document.getElementById('onb-sel-label');
+  if (el) el.textContent = `${sel} of ${total} selected`;
+}
+
+async function decideOnboarding() {
+  const checkboxes = document.querySelectorAll('.onb-checkbox:checked');
+  const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+  if (selectedIds.length === 0) {
+    alert('Please select at least one candidate to onboard, or start a new workflow if no candidates cleared.');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/hitl/${S.sessionId}/onboarding`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected_candidate_ids: selectedIds }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    S.onboardingSubmitted = true;
+    S.view = 'onboarding_active';
+    render('onboarding_active');
+    startPolling();
+  } catch (e) { alert('Failed to submit onboarding decision: ' + e.message); }
+}
+
+// ─── Complete ─────────────────────────────────────────────────────────────
+function renderComplete() {
+  const obr = S.status?.onboarding_results || [];
+  const sentCount = obr.filter(r => r.status === 'sent').length;
+  const total = obr.length;
+  const sub = total > 0
+    ? `Onboarding emails sent to <strong>${sentCount}/${total}</strong> selected candidate${total !== 1 ? 's' : ''}.`
+    : 'Workflow completed successfully.';
+  return `
+  <div class="complete-stage">
+    <div class="check-circle">✓</div>
+    <div class="complete-title">Workflow Complete</div>
+    <div class="complete-sub">${sub}<br>Congratulations emails sent to selected candidates.</div>
+    <div class="complete-btns">
+      <button class="btn btn-approve" style="padding:12px 28px" onclick="window.open('/api/workflow/${S.sessionId}/report','_blank')">Open Run Log →</button>
+      <button class="btn btn-outline" style="padding:12px 28px" onclick="newSession()">Start New Workflow</button>
+    </div>
+  </div>`;
+}
+
+// ─── Error ────────────────────────────────────────────────────────────────
+function renderError() {
+  const msg = S.status?.error || 'An unexpected error occurred.';
+  return `
+  <div class="error-stage">
+    <div class="error-icon">⚠</div>
+    <div class="error-title">Workflow Error</div>
+    <div class="error-msg">${esc(msg)}</div>
+    <button class="btn btn-outline" onclick="newSession()">Start New Workflow</button>
+  </div>`;
+}
+
+// ─── Upload handlers ──────────────────────────────────────────────────────
+let jdFile = null, resumeFiles = [];
+
+function bindDropHandlers() {
+  setupDrop('jd-zone', 'jd-input', false);
+  setupDrop('resume-zone', 'resume-input', true);
+}
+
+function setupDrop(zoneId, inputId, multi) {
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  if (!zone || !input) return;
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files);
+    if (multi) { resumeFiles = files; refreshResumes(); }
+    else        { jdFile = files[0];  refreshJd(); }
+    checkReady();
+  });
+}
+
+function onJdPick(input)     { jdFile = input.files[0] || null; refreshJd(); checkReady(); }
+function onResumePick(input) { resumeFiles = Array.from(input.files); refreshResumes(); checkReady(); }
+
+function refreshJd() {
+  const el = document.getElementById('jd-chips');
+  const z  = document.getElementById('jd-zone');
+  if (!el || !z) return;
+  if (!jdFile) { el.innerHTML = ''; z.classList.remove('filled'); return; }
+  z.classList.add('filled');
+  el.innerHTML = fileChip(jdFile);
+}
+
+function refreshResumes() {
+  const el = document.getElementById('resume-chips');
+  const z  = document.getElementById('resume-zone');
+  if (!el || !z) return;
+  if (!resumeFiles.length) { el.innerHTML = ''; z.classList.remove('filled'); return; }
+  z.classList.add('filled');
+  el.innerHTML = resumeFiles.map(fileChip).join('');
+}
+
+function fileChip(f) {
+  return `<div class="file-chip">
+    <span class="fc-name">📄 ${esc(f.name)}</span>
+    <span class="fc-size">${(f.size/1024).toFixed(0)} KB</span>
+  </div>`;
+}
+
+function checkReady() {
+  const btn = document.getElementById('start-btn');
+  if (btn) btn.disabled = !(jdFile && resumeFiles.length > 0);
+}
+
+// ─── Start workflow ───────────────────────────────────────────────────────
+async function startWorkflow() {
+  if (!jdFile || !resumeFiles.length) return;
+  const btn = document.getElementById('start-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Uploading…'; }
+
+  const fd = new FormData();
+  fd.append('jd_file', jdFile);
+  resumeFiles.forEach(f => fd.append('resume_files', f));
+
+  try {
+    const res = await fetch('/api/workflow/start', { method:'POST', body:fd });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    S.sessionId = data.session_id;
+    localStorage.setItem('hr_session_id', S.sessionId);
+    showChip(S.sessionId);
+    S.view = 'working';
+    render('working');
+    startPolling();
+  } catch (e) {
+    alert('Failed to start: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Launch Workflow →'; }
+  }
+}
+
+// ─── Debug helpers ────────────────────────────────────────────────────────
+/* DEBUG — commented out for production
+async function debugSkipToOnboarding() {
+  try {
+    const res = await fetch('/api/debug/skip-to-onboarding', { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    S.sessionId = data.session_id;
+    localStorage.setItem('hr_session_id', S.sessionId);
+    showChip(S.sessionId);
+    S.view = 'working';
+    render('working');
+    startPolling();
+  } catch (e) { alert('Debug skip failed: ' + e.message); }
+}
+*/
+
+// ─── HITL decisions ───────────────────────────────────────────────────────
+function toggleFb(gate) {
+  const box = document.getElementById(`fb-${gate}`);
+  if (box) box.style.display = box.style.display === 'block' ? 'none' : 'block';
+}
+
+async function decide(gate, decision) {
+  const ep = gate === 'shortlist'
+    ? `/api/hitl/${S.sessionId}/shortlist`
+    : `/api/hitl/${S.sessionId}/pre-screening`;
+
+  let feedback = null;
+  if (decision === 'rejected') {
+    const ta = document.getElementById(`fb-${gate}-text`);
+    feedback = ta?.value?.trim();
+    if (!feedback) { alert('Please enter a reason for rejection.'); return; }
+  }
+  try {
+    const res = await fetch(ep, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ decision, feedback }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    S.view = 'working'; render('working'); startPolling();
+  } catch (e) { alert('Decision failed: ' + e.message); }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function callBadge(status) {
+  const m = {
+    in_progress: { cls:'sb-calling',   label:'Calling',   prefix:'<span class="spinner"></span>' },
+    completed:   { cls:'sb-completed', label:'Completed', prefix:'' },
+    failed:      { cls:'sb-failed',    label:'Failed',    prefix:'' },
+    no_answer:   { cls:'sb-noanswer',  label:'No Answer', prefix:'' },
+    'no-answer': { cls:'sb-noanswer',  label:'No Answer', prefix:'' },
+    busy:        { cls:'sb-noanswer',  label:'Busy',      prefix:'' },
+    waiting:     { cls:'sb-waiting',   label:'Waiting',   prefix:'' },
+  };
+  return m[status] || { cls:'sb-waiting', label: status || 'Waiting', prefix:'' };
+}
+
+function showChip(sid) {
+  const el = document.getElementById('session-chip');
+  if (el) { el.style.display = 'flex'; el.textContent = sid.slice(0,8) + '…'; }
+}
+
+function newSession() {
+  stopPolling();
+  S.sessionId = null; S.status = null; S.callDetails = null; S.view = 'upload'; S.onboardingSubmitted = false;
+  localStorage.removeItem('hr_session_id');
+  jdFile = null; resumeFiles = [];
+  const chip = document.getElementById('session-chip');
+  if (chip) chip.style.display = 'none';
+  render('upload');
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Drawer (step detail panel) ───────────────────────────────────────────
+function openDrawer(idx) {
+  const titles = ['Resume Analysis', 'Shortlist Approval', 'Pre-Screening Calls', 'Final Approval', 'Interview Scheduler', 'Onboarding Results'];
+  document.getElementById('drawer-title').textContent = titles[idx] || 'Step Data';
+  document.getElementById('drawer-body').innerHTML = drawerContent(idx);
+  document.getElementById('drawer').style.display = 'block';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').style.display = 'none';
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function drawerContent(idx) {
+  if (idx === 0) {
+    const cands = S.status?.shortlisted_candidates || [];
+    if (!cands.length) return '<p style="color:var(--muted)">No data yet.</p>';
+    return cands.map(c => {
+      const r = 20, circ = 2 * Math.PI * r, fill = circ * (c.match_score / 10), gap = circ - fill;
+      return `
+      <div class="cand-card" style="margin-bottom:10px">
+        <div class="cand-row">
+          <div><div class="cand-name">${esc(c.name)}</div><div class="cand-role">${esc(c.current_role||'—')}</div></div>
+          <div class="score-donut">
+            <svg viewBox="0 0 50 50"><circle class="donut-bg" cx="25" cy="25" r="${r}"/>
+            <circle class="donut-fill" cx="25" cy="25" r="${r}" stroke="#22c55e" stroke-dasharray="${fill} ${gap}"/></svg>
+            <div class="score-num">${c.match_score}</div>
+          </div>
+        </div>
+        <div class="cand-reason">${esc(c.selection_reason||'')}</div>
+        <div class="skills">${(c.skills||[]).slice(0,8).map(s=>`<span class="skill-pill">${esc(s)}</span>`).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+  if (idx === 1) {
+    const sl  = S.status?.shortlist_approval_status || '—';
+    const fb  = S.status?.shortlist_approval_feedback || '—';
+    const rat = S.status?.shortlisting_rationale || '—';
+    const cls = sl === 'approved' ? 'rf-yes' : sl === 'rejected' ? 'rf-no' : '';
+    return `
+      <div class="res-field" style="margin-bottom:8px"><div class="rf-label">Decision</div>
+        <div class="rf-val ${cls}">${sl.toUpperCase()}</div></div>
+      <div class="res-field" style="margin-bottom:8px"><div class="rf-label">Feedback</div>
+        <div class="rf-val">${esc(fb)}</div></div>
+      <div class="res-field"><div class="rf-label">AI Rationale</div>
+        <div class="rf-val" style="line-height:1.7;font-size:12px;color:var(--muted2)">${esc(rat)}</div></div>`;
+  }
+  if (idx === 2) {
+    const results = screeningResults();
+    if (!results.length) return '<p style="color:var(--muted)">No call data yet.</p>';
+    return results.map(r => {
+      const lfc = r.looking_for_change;
+      const lfcHtml = lfc === true ? '<span class="rf-val rf-yes">Yes</span>'
+                    : lfc === false ? '<span class="rf-val rf-no">No</span>'
+                    : '<span class="rf-val">—</span>';
+      const { cls, label } = callBadge(r.call_status || '');
+      return `
+      <div class="res-card" style="margin-bottom:10px">
+        <div class="res-head"><div class="res-name">${esc(r.name)}</div>
+          <span class="sbadge ${cls}">${label}</span></div>
+        <div class="res-grid">
+          <div class="res-field"><div class="rf-label">Open to Change</div>${lfcHtml}</div>
+          <div class="res-field"><div class="rf-label">Experience</div><div class="rf-val">${esc(r.experience_years||'—')}</div></div>
+          <div class="res-field"><div class="rf-label">Current CTC</div><div class="rf-val">${esc(r.current_ctc||'—')}</div></div>
+          <div class="res-field"><div class="rf-label">Expected CTC</div><div class="rf-val">${esc(r.expected_ctc||'—')}</div></div>
+          <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Reason for Change</div><div class="rf-val">${esc(r.reason_for_change||'—')}</div></div>
+          <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Interview Slots</div><div class="rf-val">${(r.interview_slots||[]).map(s=>esc(s)).join('<br>') || '—'}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if (idx === 4) {
+    const esr = S.status?.email_scheduling_results || [];
+    if (!esr.length) return '<p style="color:var(--muted)">No scheduling data yet.</p>';
+    return esr.map(r => {
+      const statusLabel = r.status === 'scheduled'    ? 'Scheduled'
+                        : r.status === 'no_slots'     ? 'No Slots Provided'
+                        : 'No Free Slot Found';
+      const statusCls   = r.status === 'scheduled' ? 'rf-yes' : 'rf-no';
+      return `
+      <div class="res-card" style="margin-bottom:10px">
+        <div class="res-head">
+          <div class="res-name">${esc(r.name)}</div>
+          <span class="rf-val ${statusCls}" style="font-size:11px;padding:3px 8px;border-radius:4px">${statusLabel}</span>
+        </div>
+        <div class="res-grid">
+          <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Email</div><div class="rf-val">${esc(r.email||'—')}</div></div>
+          ${r.status === 'scheduled' ? `
+          <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Scheduled Slot</div><div class="rf-val">${esc(r.scheduled_slot||'—')}</div></div>
+          ${r.calendar_link ? `<div class="res-field" style="grid-column:1/-1"><div class="rf-label">Calendar Event</div><div class="rf-val"><a href="${esc(r.calendar_link)}" target="_blank" style="color:var(--accent)">Open in Google Calendar →</a></div></div>` : ''}
+          ` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if (idx === 5) {
+    const obr = S.status?.onboarding_results || [];
+    if (!obr.length) return '<p style="color:var(--muted)">No onboarding data yet.</p>';
+    return obr.map(r => {
+      const cls = r.status === 'sent' ? 'rf-yes' : 'rf-no';
+      const label = r.status === 'sent' ? 'Email Sent' : r.status === 'no_email' ? 'No Email' : 'Failed';
+      return `
+      <div class="res-card" style="margin-bottom:10px">
+        <div class="res-head">
+          <div class="res-name">${esc(r.name)}</div>
+          <span class="rf-val ${cls}" style="font-size:11px;padding:3px 8px;border-radius:4px">${label}</span>
+        </div>
+        <div class="res-grid">
+          <div class="res-field" style="grid-column:1/-1"><div class="rf-label">Email</div>
+            <div class="rf-val">${esc(r.email || '—')}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  return '<p style="color:var(--muted)">No data.</p>';
+}
+</script>
+</body>
+</html>

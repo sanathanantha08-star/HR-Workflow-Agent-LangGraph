@@ -43,6 +43,7 @@ htmlcov/
 # Generated HTML run logs
 run_log_*.html
 *.html
+!frontend/index.html
 
 # Google OAuth credentials and tokens — never commit these
 google_credentials.json
